@@ -204,11 +204,154 @@ const COMBO_LV1 = 15;
 const COMBO_LV2 = 30;   
 const COMBO_LV3 = 50;   
 
+// --- ローマ字生成エンジン ---
+const romajiMap = {
+  'あ':['a'], 'い':['i'], 'う':['u', 'wu'], 'え':['e'], 'お':['o'],
+  'か':['ka'], 'き':['ki'], 'く':['ku', 'cu', 'qu'], 'け':['ke'], 'こ':['ko', 'co'],
+  'さ':['sa'], 'し':['shi', 'si', 'ci'], 'す':['su'], 'せ':['se', 'ce'], 'そ':['so', 'co'],
+  'た':['ta'], 'ち':['chi', 'ti'], 'つ':['tsu', 'tu'], 'て':['te'], 'と':['to'],
+  'な':['na'], 'に':['ni'], 'ぬ':['nu'], 'ね':['ne'], 'の':['no'],
+  'は':['ha'], 'ひ':['hi'], 'ふ':['fu', 'hu'], 'へ':['he'], 'ほ':['ho'],
+  'ま':['ma'], 'み':['mi'], 'む':['mu'], 'め':['me'], 'も':['mo'],
+  'や':['ya'], 'ゆ':['yu'], 'よ':['yo'],
+  'ら':['ra'], 'り':['ri'], 'る':['ru'], 'れ':['re'], 'ろ':['ro'],
+  'わ':['wa'], 'を':['wo'], 'ん':['n', 'nn'],
+  'が':['ga'], 'ぎ':['gi'], 'ぐ':['gu'], 'げ':['ge'], 'ご':['go'],
+  'ざ':['za'], 'じ':['ji', 'zi'], 'ず':['zu'], 'ぜ':['ze'], 'ぞ':['zo'],
+  'だ':['da'], 'ぢ':['di'], 'づ':['du'], 'で':['de'], 'ど':['do'],
+  'ば':['ba'], 'び':['bi'], 'ぶ':['bu'], 'べ':['be'], 'ぼ':['bo'],
+  'ぱ':['pa'], 'ぴ':['pi'], 'ぷ':['pu'], 'ぺ':['pe'], 'ぽ':['po'],
+  'きゃ':['kya'], 'きゅ':['kyu'], 'きょ':['kyo'],
+  'しゃ':['sha', 'sya'], 'しゅ':['shu', 'syu'], 'しょ':['sho', 'syo'],
+  'ちゃ':['cha', 'tya', 'cya'], 'ちゅ':['chu', 'tyu', 'cyu'], 'ちょ':['cho', 'tyo', 'cyo'],
+  'にゃ':['nya'], 'にゅ':['nyu'], 'にょ':['nyo'],
+  'ひゃ':['hya'], 'ひゅ':['hyu'], 'ひょ':['hyo'],
+  'みゃ':['mya'], 'みゅ':['myu'], 'みょ':['myo'],
+  'りゃ':['rya'], 'りゅ':['ryu'], 'りょ':['ryo'],
+  'ぎゃ':['gya'], 'ぎゅ':['gyu'], 'ぎょ':['gyo'],
+  'じゃ':['ja', 'zya', 'jya'], 'じゅ':['ju', 'zyu', 'jyu'], 'じょ':['jo', 'zyo', 'jyo'],
+  'びゃ':['bya'], 'びゅ':['byu'], 'びょ':['byo'],
+  'ぴゃ':['pya'], 'ぴゅ':['pyu'], 'ぴょ':['pyo'],
+  'ふぁ':['fa'], 'ふぃ':['fi'], 'ふぇ':['fe'], 'ふぉ':['fo'],
+  'てぃ':['thi'], 'でぃ':['dhi'],
+  'ー':['-']
+};
+
+function generateRomaji(kanaStr) {
+  if (kanaStr.length === 0) return [""];
+  
+  let token = kanaStr[0];
+  let nextChar = kanaStr[1];
+  
+  let doubleToken = kanaStr.substr(0, 2);
+  if (kanaStr.length >= 2 && romajiMap[doubleToken]) {
+    let tails = generateRomaji(kanaStr.substring(2));
+    let res = [];
+    for (let r of romajiMap[doubleToken]) {
+      for (let t of tails) res.push(r + t);
+    }
+    return res;
+  }
+  
+  if (token === 'っ' && nextChar) {
+    let res = [];
+    let tailsNormal = generateRomaji(kanaStr.substring(1));
+    for (let t of tailsNormal) {
+      res.push('xtsu' + t);
+      res.push('ltu' + t);
+      res.push('xtu' + t);
+      
+      let firstChar = t[0];
+      if (firstChar && /[a-z]/.test(firstChar) && !/[aeiou]/.test(firstChar)) {
+        res.push(firstChar + t);
+      }
+    }
+    return [...new Set(res)];
+  }
+  
+  if (token === 'ん') {
+    let res = [];
+    let tails = generateRomaji(kanaStr.substring(1));
+    for (let t of tails) {
+      res.push('nn' + t);
+      if (t.length > 0) {
+        let firstChar = t[0];
+        if (!/[aeiouyn]/.test(firstChar)) {
+          res.push('n' + t);
+        }
+      } else {
+        res.push('n' + t);
+      }
+    }
+    return [...new Set(res)];
+  }
+  
+  if (romajiMap[token]) {
+    let tails = generateRomaji(kanaStr.substring(1));
+    let res = [];
+    for (let r of romajiMap[token]) {
+      for (let t of tails) res.push(r + t);
+    }
+    return res;
+  }
+  
+  let tails = generateRomaji(kanaStr.substring(1));
+  let res = [];
+  for (let t of tails) res.push(token + t);
+  return res;
+}
+
 const texts = [
-  { jp: "スクワットは下半身を鍛える", en: "sukuwattohakahanshinwokitaeru" },
-  { jp: "タンパク質は筋肉の材料", en: "tanpakushitsuhakinnikunozairyou" },
-  { jp: "フォームが重要", en: "fo-mugajuuyou" },
-  { jp: "継続は力なり", en: "keizokuhatikaranari" }
+  { jp: "ベンチプレス", kana: "べんちぷれす" },
+  { jp: "デッドリフト", kana: "でっどりふと" },
+  { jp: "バーベルスクワット", kana: "ばーべるすくわっと" },
+  { jp: "ラットプルダウン", kana: "らっとぷるだうん" },
+  { jp: "ショルダープレス", kana: "しょるだーぷれす" },
+  { jp: "ダンベルカール", kana: "だんべるかーる" },
+  { jp: "レッグエクステンション", kana: "れっぐえくすてんしょん" },
+  { jp: "チンニング", kana: "ちんにんぐ" },
+  { jp: "プランク", kana: "ぷらんく" },
+  { jp: "ランジ", kana: "らんじ" },
+  { jp: "サイドレイズ", kana: "さいどれいず" },
+  { jp: "クランチ", kana: "くらんち" },
+  { jp: "ブルガリアンスクワット", kana: "ぶるがりあんすくわっと" },
+  { jp: "カーフレイズ", kana: "かーふれいず" },
+  { jp: "アブローラー", kana: "あぶろーらー" },
+  { jp: "大胸筋", kana: "だいきょうきん" },
+  { jp: "広背筋", kana: "こうはいきん" },
+  { jp: "大腿四頭筋", kana: "だいたいしとうきん" },
+  { jp: "ハムストリングス", kana: "はむすとりんぐす" },
+  { jp: "上腕二頭筋", kana: "じょうわんにとうきん" },
+  { jp: "上腕三頭筋", kana: "じょうわんさんとうきん" },
+  { jp: "三角筋", kana: "さんかくきん" },
+  { jp: "腹直筋", kana: "ふくちょくきん" },
+  { jp: "僧帽筋", kana: "そうぼうきん" },
+  { jp: "大臀筋", kana: "だいでんきん" },
+  { jp: "プロテインを飲む", kana: "ぷろていんをのむ" },
+  { jp: "必須アミノ酸", kana: "ひっすあみのさん" },
+  { jp: "クレアチン", kana: "くれあちん" },
+  { jp: "炭水化物", kana: "たんすいかぶつ" },
+  { jp: "脂質制限", kana: "ししつせいげん" },
+  { jp: "チートデイ", kana: "ちーとでい" },
+  { jp: "基礎代謝", kana: "きそたいしゃ" },
+  { jp: "カロリー計算", kana: "かろりーけいさん" },
+  { jp: "鶏胸肉とブロッコリー", kana: "とりむねにくとぶろっこりー" },
+  { jp: "サプリメント", kana: "さぷりめんと" },
+  { jp: "オールアウト", kana: "おーるあうと" },
+  { jp: "バルクアップ", kana: "ばるくあっぷ" },
+  { jp: "パンプアップ", kana: "ぱんぷあっぷ" },
+  { jp: "インターバル", kana: "いんたーばる" },
+  { jp: "超回復", kana: "ちょうかいふく" },
+  { jp: "パーソナルトレーニング", kana: "ぱーそなるとれーにんぐ" },
+  { jp: "レップ数", kana: "れっぷすう" },
+  { jp: "筋肉は裏切らない", kana: "きんにくはうらぎらない" },
+  { jp: "ナイスバルク", kana: "ないすばるく" },
+  { jp: "限界からが勝負", kana: "げんかいからがしょうぶ" },
+  { jp: "フォームを意識する", kana: "ふぉーむをいしきする" },
+  { jp: "ストレッチ", kana: "すとれっち" },
+  { jp: "ウォームアップ", kana: "うぉーむあっぷ" },
+  { jp: "クールダウン", kana: "くーるだうん" },
+  { jp: "トレーニングジム", kana: "とれーにんぐじむ" }
 ];
 
 const bgmList = [
@@ -218,9 +361,8 @@ const bgmList = [
 ];
 
 let currentJp = "";
-let currentEn = "";
 let typedEn = "";   
-let untypedEn = ""; 
+let untypedEnList = []; 
 let score = 0;
 let combo = 0;
 let fatigue = 0;
@@ -297,15 +439,16 @@ bgmToggleBtn.addEventListener("click", () => {
 function newText() {
   const rnd = texts[Math.floor(Math.random() * texts.length)];
   currentJp = rnd.jp;
-  currentEn = rnd.en;
+  untypedEnList = generateRomaji(rnd.kana);
   typedEn = "";
-  untypedEn = currentEn;
   updateTextDisplay();
 }
 
 function updateTextDisplay() {
   textJpEl.textContent = currentJp;
-  textEnEl.innerHTML = `<span class="typed">${typedEn}</span>${untypedEn}`;
+  // 画面には、現在有効なローマ字候補のうち最初のものを表示する
+  const displayEn = untypedEnList.length > 0 ? untypedEnList[0] : "";
+  textEnEl.innerHTML = `<span class="typed">${typedEn}</span>${displayEn}`;
 }
 
 function getLevel() {
@@ -485,9 +628,14 @@ document.addEventListener("keydown", (e) => {
 
   const key = e.key.toLowerCase(); 
 
-  if (untypedEn.startsWith(key)) {
-    typedEn += untypedEn[0];
-    untypedEn = untypedEn.substring(1);
+  // 押されたキーで始まるローマ字候補だけを絞り込む
+  const validCandidates = untypedEnList.filter(romaji => romaji.startsWith(key));
+
+  if (validCandidates.length > 0) {
+    // 正解のキー入力だった場合
+    typedEn += key;
+    // 全ての有効な候補の先頭1文字を削る
+    untypedEnList = validCandidates.map(romaji => romaji.substring(1));
 
     combo++;
     score += 10; 
@@ -496,7 +644,8 @@ document.addEventListener("keydown", (e) => {
     playLift(); 
     updateTextDisplay();
 
-    if (untypedEn.length === 0) {
+    // どれか一つでも空文字（最後まで打った）になればクリア
+    if (untypedEnList.some(romaji => romaji.length === 0)) {
       score += 50;
       fatigue = Math.max(0, fatigue - 5);
       okSound.currentTime = 0;
