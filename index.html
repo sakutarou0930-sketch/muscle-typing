@@ -7,9 +7,14 @@
 <style>
 body {
   background: #111;
-  color: #fff;
+  color: white;
   text-align: center;
   font-family: sans-serif;
+  margin-top: 20px;
+}
+
+h1 {
+  margin-bottom: 10px;
 }
 
 #character {
@@ -19,19 +24,27 @@ body {
 }
 
 #text {
-  font-size: 24px;
+  font-size: 28px;
   margin: 20px;
+  min-height: 40px;
 }
 
 #input {
-  font-size: 20px;
+  font-size: 24px;
   padding: 10px;
   width: 60%;
+  text-align: center;
+}
+
+#nameInput {
+  padding: 5px;
+  margin-top: 10px;
 }
 
 .combo {
-  font-size: 28px;
+  font-size: 30px;
   color: yellow;
+  margin-top: 10px;
 }
 
 .power {
@@ -48,19 +61,26 @@ body {
 }
 
 .exhausted {
-  filter: grayscale(0.6);
+  filter: grayscale(0.7);
   transform: scale(0.95);
+}
+
+#fatigueText {
+  margin-top: 10px;
+  font-size: 22px;
+}
+
+#retryBtn {
+  margin-top: 20px;
+  padding: 12px 24px;
+  font-size: 22px;
+  cursor: pointer;
 }
 
 @keyframes shake {
   0% { transform: translateX(0); }
   50% { transform: translateX(3px); }
   100% { transform: translateX(0); }
-}
-
-#nameInput {
-  margin-top: 10px;
-  padding: 5px;
 }
 </style>
 </head>
@@ -79,9 +99,9 @@ body {
 
 <input
   id="input"
+  type="text"
   autofocus
   autocomplete="off"
-  autocorrect="off"
   spellcheck="false"
 >
 
@@ -93,17 +113,33 @@ body {
 </div>
 
 <h2>🏆 ランキング</h2>
+
 <ol id="ranking"></ol>
+
+<button id="retryBtn" style="display:none;">
+  🔁 リトライ
+</button>
 
 <audio id="okSound" src="ok.mp3"></audio>
 <audio id="missSound" src="miss.mp3"></audio>
 
 <script>
+
 const texts = [
   "スクワットは下半身を鍛える",
   "タンパク質は筋肉の材料",
   "フォームが重要",
-  "継続は力なり"
+  "継続は力なり",
+  "筋肉は裏切らない",
+  "毎日の努力が大切"
+];
+
+const characters = [
+  "lv1_idle.png",
+  "lv2_idle.png",
+  "lv3_idle.png",
+  "lv4_idle.png",
+  "lv5_idle.png"
 ];
 
 let current = "";
@@ -124,30 +160,29 @@ const timerEl = document.getElementById("timer");
 const fatigueText = document.getElementById("fatigueText");
 const char = document.getElementById("character");
 const rankingEl = document.getElementById("ranking");
+const retryBtn = document.getElementById("retryBtn");
 const nameInput = document.getElementById("nameInput");
 
 const okSound = document.getElementById("okSound");
 const missSound = document.getElementById("missSound");
 
-const characters = [
-  "lv1_idle.png",
-  "lv2_idle.png",
-  "lv3_idle.png",
-  "lv4_idle.png",
-  "lv5_idle.png"
-];
-
 function newText() {
-  current = texts[Math.floor(Math.random() * texts.length)];
+
+  current =
+    texts[Math.floor(Math.random() * texts.length)];
+
   textEl.textContent = current;
+
   input.value = "";
 }
 
 function getLevel() {
+
   if (score < 100) return 0;
   if (score < 300) return 1;
   if (score < 600) return 2;
   if (score < 1000) return 3;
+
   return 4;
 }
 
@@ -167,12 +202,17 @@ function playLift() {
   char.src = "lift_up.png";
 
   setTimeout(() => {
+
     char.src = "lift_down.png";
+
   }, 120);
 
   setTimeout(() => {
-    updateCharacter();
+
     lifting = false;
+
+    updateCharacter();
+
   }, 240);
 }
 
@@ -187,32 +227,45 @@ function updateEffects() {
 
   // コンボ演出
   if (combo >= 20) {
+
     char.classList.add("power");
+
   } else if (combo >= 10) {
+
     char.classList.add("speed");
   }
 
   // 疲労演出
   if (fatigue > 80) {
+
     char.classList.add("exhausted");
-    fatigueText.textContent = "😵 疲労MAX";
-  }
-  else if (fatigue > 50) {
+
+    fatigueText.textContent =
+      "😵 疲労MAX";
+
+  } else if (fatigue > 50) {
+
     char.classList.add("tired");
-    fatigueText.textContent = "🥵 疲れている";
-  }
-  else {
+
+    fatigueText.textContent =
+      "🥵 疲れている";
+
+  } else {
+
     fatigueText.textContent = "";
   }
 }
 
 function startTimer() {
 
+  clearInterval(timerInterval);
+
   timerInterval = setInterval(() => {
 
     time--;
 
-    timerEl.textContent = "TIME: " + time;
+    timerEl.textContent =
+      "TIME: " + time;
 
     if (time <= 0) {
 
@@ -228,16 +281,19 @@ function endGame() {
 
   input.disabled = true;
 
+  retryBtn.style.display = "inline-block";
+
   saveRanking();
 
   showRanking();
 
-  alert("終了！スコア: " + score);
+  alert("終了！ スコア: " + score);
 }
 
 function saveRanking() {
 
-  const name = nameInput.value || "名無し";
+  const name =
+    nameInput.value || "名無し";
 
   let data = JSON.parse(
     localStorage.getItem("ranking") || "[]"
@@ -248,7 +304,9 @@ function saveRanking() {
     score
   });
 
-  data.sort((a, b) => b.score - a.score);
+  data.sort((a, b) =>
+    b.score - a.score
+  );
 
   data = data.slice(0, 5);
 
@@ -268,7 +326,8 @@ function showRanking() {
 
   data.forEach(d => {
 
-    const li = document.createElement("li");
+    const li =
+      document.createElement("li");
 
     li.textContent =
       d.name + " - " + d.score;
@@ -283,6 +342,7 @@ input.addEventListener("input", () => {
 
   // 正しい入力に戻ったら解除
   if (current.startsWith(val)) {
+
     missLocked = false;
   }
 
@@ -306,7 +366,6 @@ input.addEventListener("input", () => {
     newText();
 
     missLocked = false;
-
   }
 
   // ミス
@@ -325,7 +384,19 @@ input.addEventListener("input", () => {
     missSound.currentTime = 0;
     missSound.play();
 
+    // 入力リセット
+    input.value = "";
+
     missLocked = true;
+
+    comboEl.textContent = "MISS!";
+
+    setTimeout(() => {
+
+      comboEl.textContent =
+        "COMBO x0";
+
+    }, 500);
   }
 
   comboEl.textContent =
@@ -334,7 +405,47 @@ input.addEventListener("input", () => {
   scoreEl.textContent =
     "SCORE: " + score;
 
+  updateCharacter();
+
   updateEffects();
+});
+
+retryBtn.addEventListener("click", () => {
+
+  score = 0;
+  combo = 0;
+  fatigue = 0;
+  time = 60;
+
+  lifting = false;
+  missLocked = false;
+
+  input.disabled = false;
+
+  input.value = "";
+
+  comboEl.textContent =
+    "COMBO x0";
+
+  scoreEl.textContent =
+    "SCORE: 0";
+
+  timerEl.textContent =
+    "TIME: 60";
+
+  fatigueText.textContent = "";
+
+  retryBtn.style.display = "none";
+
+  updateCharacter();
+
+  updateEffects();
+
+  newText();
+
+  input.focus();
+
+  startTimer();
 });
 
 newText();
@@ -346,6 +457,7 @@ updateEffects();
 startTimer();
 
 showRanking();
+
 </script>
 
 </body>
