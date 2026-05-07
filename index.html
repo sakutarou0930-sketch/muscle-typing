@@ -1,76 +1,51 @@
 ```html
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
 <meta charset="UTF-8">
 <title>筋トレタイピング</title>
 
 <style>
-
-body{
-background:#111;
-color:white;
-text-align:center;
-font-family:sans-serif;
-overflow:hidden;
+body {
+  background:#111;
+  color:#fff;
+  text-align:center;
+  font-family:sans-serif;
 }
 
-h1{
-margin-top:20px;
+#character {
+  width:256px;
+  image-rendering: pixelated;
+  transition: all 0.2s;
 }
 
-#character{
-width:256px;
-image-rendering:pixelated;
-transition:0.2s;
+#text {
+  font-size:24px;
+  margin:20px;
 }
 
-#text{
-font-size:38px;
-margin-top:20px;
+#input {
+  font-size:20px;
+  padding:10px;
+  width:60%;
 }
 
-#roma{
-font-size:22px;
-color:#aaa;
-margin-bottom:20px;
+.combo { font-size:28px; color:yellow; }
+.power { filter: drop-shadow(0 0 10px orange); transform: scale(1.1); }
+.speed { animation: shake 0.1s infinite; }
+.tired { filter: brightness(0.7); }
+.exhausted { filter: grayscale(0.6); transform: scale(0.95); }
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+  100% { transform: translateX(0); }
 }
 
-#input{
-font-size:26px;
-padding:10px;
-width:60%;
-text-align:center;
+#nameInput {
+  margin-top:10px;
+  padding:5px;
 }
-
-#score,
-#combo,
-#timer{
-font-size:26px;
-margin-top:10px;
-}
-
-#combo{
-color:yellow;
-font-weight:bold;
-}
-
-.power{
-filter:drop-shadow(0 0 15px orange);
-transform:scale(1.08);
-}
-
-.speed{
-animation:shake 0.08s infinite;
-}
-
-@keyframes shake{
-0%{transform:translateX(0);}
-50%{transform:translateX(4px);}
-100%{transform:translateX(0);}
-}
-
 </style>
 </head>
 
@@ -78,250 +53,178 @@ animation:shake 0.08s infinite;
 
 <h1>💪 筋トレタイピング 💪</h1>
 
+<input id="nameInput" placeholder="名前を入力">
+
+<br><br>
+
 <img id="character" src="lv1_idle.png">
 
 <div id="text"></div>
-<div id="roma"></div>
+<input id="input" autofocus>
 
-<input id="input" autocomplete="off" autofocus>
+<div>
+  <div id="timer">TIME: 60</div>
+  <div id="combo" class="combo">COMBO x0</div>
+  <div id="score">SCORE: 0</div>
+  <div id="fatigueText"></div>
+</div>
 
-<div id="timer">TIME : 60</div>
-<div id="score">SCORE : 0</div>
-<div id="combo">COMBO x0</div>
+<h2>🏆 ランキング</h2>
+<ol id="ranking"></ol>
+
+<audio id="okSound" src="ok.mp3"></audio>
+<audio id="missSound" src="miss.mp3"></audio>
 
 <script>
-
-const questions = [
-
-{ jp:"スクワット", roma:"sukuwatto" },
-{ jp:"タンパク質", roma:"tanpakushitsu" },
-{ jp:"フォーム", roma:"fo-mu" },
-{ jp:"継続は力なり", roma:"keizokuhachikaranari" },
-{ jp:"ベンチプレス", roma:"benchipuresu" },
-{ jp:"デッドリフト", roma:"deddorifuto" },
-{ jp:"筋肉痛", roma:"kinnikutsuu" },
-{ jp:"プロテイン", roma:"purotein" }
-
+const texts = [
+  "スクワットは下半身を鍛える",
+  "タンパク質は筋肉の材料",
+  "フォームが重要",
+  "継続は力なり"
 ];
 
-let currentQuestion;
-
+let current = "";
 let score = 0;
 let combo = 0;
 let fatigue = 0;
 let time = 60;
+let timerInterval;
 
-let isAnimating = false;
-let isTired = false;
-
-const text = document.getElementById("text");
-const roma = document.getElementById("roma");
 const input = document.getElementById("input");
-const scoreText = document.getElementById("score");
-const comboText = document.getElementById("combo");
-const timerText = document.getElementById("timer");
-const character = document.getElementById("character");
+const textEl = document.getElementById("text");
+const comboEl = document.getElementById("combo");
+const scoreEl = document.getElementById("score");
+const timerEl = document.getElementById("timer");
+const char = document.getElementById("character");
+const rankingEl = document.getElementById("ranking");
+const nameInput = document.getElementById("nameInput");
 
-function setQuestion(){
+const okSound = document.getElementById("okSound");
+const missSound = document.getElementById("missSound");
 
-currentQuestion =
-questions[
-Math.floor(Math.random() * questions.length)
+const characters = [
+  "lv1_idle.png",
+  "lv2_idle.png",
+  "lv3_idle.png",
+  "lv4_idle.png",
+  "lv5_idle.png"
 ];
 
-text.textContent = currentQuestion.jp;
-roma.textContent = currentQuestion.roma;
-
-input.value = "";
-
+function newText() {
+  current = texts[Math.floor(Math.random() * texts.length)];
+  textEl.textContent = current;
+  input.value = "";
 }
 
-function updateCharacter(){
-
-if(isAnimating) return;
-
-character.classList.remove("power");
-character.classList.remove("speed");
-
-if(isTired){
-
-if(fatigue >= 6){
-
-character.src = "exhausted.png";
-
-}
-else if(fatigue >= 4){
-
-character.src = "tired_big.png";
-
-}
-else{
-
-character.src = "tired_small.png";
-
+function getLevel() {
+  if (score < 100) return 0;
+  if (score < 300) return 1;
+  if (score < 600) return 2;
+  if (score < 1000) return 3;
+  return 4;
 }
 
-return;
-
+function updateCharacter() {
+  char.src = characters[getLevel()];
 }
 
-if(score < 100){
+function playLift() {
+  char.src = "lift_up.png";
+  setTimeout(() => {
+    char.src = "lift_down.png";
+  }, 100);
 
-character.src = "lv1_idle.png";
-
-}
-else if(score < 300){
-
-character.src = "lv2_idle.png";
-
-}
-else if(score < 600){
-
-character.src = "lv3_idle.png";
-
-}
-else if(score < 1000){
-
-character.src = "lv4_idle.png";
-
-}
-else{
-
-character.src = "lv5_idle.png";
-
+  setTimeout(() => {
+    updateCharacter();
+  }, 200);
 }
 
-if(combo >= 20){
+function updateEffects() {
+  char.classList.remove("power","speed","tired","exhausted");
 
-character.classList.add("power");
+  if (combo >= 20) char.classList.add("power");
+  else if (combo >= 10) char.classList.add("speed");
 
+  if (fatigue > 80) char.classList.add("exhausted");
+  else if (fatigue > 50) char.classList.add("tired");
 }
 
-if(combo >= 10){
+function startTimer() {
+  timerInterval = setInterval(() => {
+    time--;
+    timerEl.textContent = "TIME: " + time;
 
-character.classList.add("speed");
-
+    if (time <= 0) {
+      clearInterval(timerInterval);
+      endGame();
+    }
+  }, 1000);
 }
 
+function endGame() {
+  input.disabled = true;
+  saveRanking();
+  showRanking();
+  alert("終了！スコア: " + score);
 }
 
-function playLift(){
+function saveRanking() {
+  const name = nameInput.value || "名無し";
 
-isAnimating = true;
+  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
+  data.push({name, score});
+  data.sort((a,b)=>b.score-a.score);
+  data = data.slice(0,5);
 
-character.src = "lift_up.png";
-
-setTimeout(()=>{
-
-character.src = "lift_down.png";
-
-},400);
-
-setTimeout(()=>{
-
-isAnimating = false;
-
-updateCharacter();
-
-},1000);
-
+  localStorage.setItem("ranking", JSON.stringify(data));
 }
 
-function showTired(){
+function showRanking() {
+  rankingEl.innerHTML = "";
+  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
 
-isTired = true;
-
-updateCharacter();
-
-setTimeout(()=>{
-
-isTired = false;
-
-updateCharacter();
-
-},1200);
-
+  data.forEach(d => {
+    const li = document.createElement("li");
+    li.textContent = d.name + " - " + d.score;
+    rankingEl.appendChild(li);
+  });
 }
 
-function startTimer(){
+input.addEventListener("input", () => {
+  const val = input.value;
 
-const timer = setInterval(()=>{
+  if (val === current) {
+    score += 50;
+    combo++;
+    fatigue = Math.max(0, fatigue - 5);
 
-time--;
+    okSound.currentTime = 0;
+    okSound.play();
 
-timerText.textContent =
-"TIME : " + time;
+    playLift();
+    newText();
+  } else if (!current.startsWith(val)) {
+    combo = 0;
+    fatigue = Math.min(100, fatigue + 15);
 
-if(time <= 0){
+    missSound.currentTime = 0;
+    missSound.play();
+  } else {
+    combo++;
+    fatigue = Math.max(0, fatigue - 2);
+    playLift();
+  }
 
-clearInterval(timer);
+  comboEl.textContent = "COMBO x" + combo;
+  scoreEl.textContent = "SCORE: " + score;
 
-input.disabled = true;
-
-alert("終了！ SCORE : " + score);
-
-}
-
-},1000);
-
-}
-
-input.addEventListener("input",()=>{
-
-const value = input.value;
-
-if(currentQuestion.roma.startsWith(value)){
-
-if(value === currentQuestion.roma){
-
-combo++;
-
-score += 50;
-
-if(fatigue > 0){
-
-fatigue--;
-
-}
-
-playLift();
-
-scoreText.textContent =
-"SCORE : " + score;
-
-comboText.textContent =
-"COMBO x" + combo;
-
-setTimeout(()=>{
-
-setQuestion();
-
-},1000);
-
-}
-
-}
-else{
-
-combo = 0;
-
-fatigue++;
-
-comboText.textContent =
-"COMBO x0";
-
-showTired();
-
-}
-
-updateCharacter();
-
+  updateCharacter();
+  updateEffects();
 });
 
-setQuestion();
-updateCharacter();
+newText();
 startTimer();
-
+showRanking();
 </script>
 
 </body>
