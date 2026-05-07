@@ -90,17 +90,12 @@ body {
 }
 
 #startButton {
-  padding: 10px 20px;
-  font-size: 20px;
-  font-weight: bold;
   cursor: pointer;
-  background: orange;
-  border: none;
-  border-radius: 5px;
   margin-bottom: 10px;
+  transition: transform 0.2s;
 }
 #startButton:hover {
-  background: darkorange;
+  transform: scale(1.05);
 }
 
 #bgmToggleBtn {
@@ -160,7 +155,7 @@ body {
 
 <input id="nameInput" placeholder="名前を入力">
 <br><br>
-<button id="startButton">ゲームスタート！</button>
+<img id="startButton" src="Start.png" alt="ゲームスタート！" width="200">
 
 <br><br>
 
