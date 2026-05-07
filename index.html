@@ -1,0 +1,232 @@
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>筋トレタイピング</title>
+
+<style>
+body {
+  background:#111;
+  color:#fff;
+  text-align:center;
+  font-family:sans-serif;
+}
+
+#character {
+  width:256px;
+  image-rendering: pixelated;
+  transition: all 0.2s;
+}
+
+#text {
+  font-size:24px;
+  margin:20px;
+}
+
+#input {
+  font-size:20px;
+  padding:10px;
+  width:60%;
+}
+
+.combo { font-size:28px; color:yellow; }
+.power { filter: drop-shadow(0 0 10px orange); transform: scale(1.1); }
+.speed { animation: shake 0.1s infinite; }
+.tired { filter: brightness(0.7); }
+.exhausted { filter: grayscale(0.6); transform: scale(0.95); }
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}
+
+#nameInput {
+  margin-top:10px;
+  padding:5px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>💪 筋トレタイピング 💪</h1>
+
+<input id="nameInput" placeholder="名前を入力">
+
+<br><br>
+
+<img id="character" src="lv1_idle.png">
+
+<div id="text"></div>
+<input id="input" autofocus>
+
+<div>
+  <div id="timer">TIME: 60</div>
+  <div id="combo" class="combo">COMBO x0</div>
+  <div id="score">SCORE: 0</div>
+  <div id="fatigueText"></div>
+</div>
+
+<h2>🏆 ランキング</h2>
+<ol id="ranking"></ol>
+
+<audio id="okSound" src="ok.mp3"></audio>
+<audio id="missSound" src="miss.mp3"></audio>
+
+<script>
+const texts = [
+  "スクワットは下半身を鍛える",
+  "タンパク質は筋肉の材料",
+  "フォームが重要",
+  "継続は力なり"
+];
+
+let current = "";
+let score = 0;
+let combo = 0;
+let fatigue = 0;
+let time = 60;
+let timerInterval;
+
+const input = document.getElementById("input");
+const textEl = document.getElementById("text");
+const comboEl = document.getElementById("combo");
+const scoreEl = document.getElementById("score");
+const timerEl = document.getElementById("timer");
+const char = document.getElementById("character");
+const rankingEl = document.getElementById("ranking");
+const nameInput = document.getElementById("nameInput");
+
+const okSound = document.getElementById("okSound");
+const missSound = document.getElementById("missSound");
+
+const characters = [
+  "lv1_idle.png",
+  "lv2_idle.png",
+  "lv3_idle.png",
+  "lv4_idle.png",
+  "lv5_idle.png"
+];
+
+function newText() {
+  current = texts[Math.floor(Math.random() * texts.length)];
+  textEl.textContent = current;
+  input.value = "";
+}
+
+function getLevel() {
+  if (score < 100) return 0;
+  if (score < 300) return 1;
+  if (score < 600) return 2;
+  if (score < 1000) return 3;
+  return 4;
+}
+
+function updateCharacter() {
+  char.src = characters[getLevel()];
+}
+
+function playLift() {
+  char.src = "lift_up.png";
+  setTimeout(() => {
+    char.src = "lift_down.png";
+  }, 100);
+
+  setTimeout(() => {
+    updateCharacter();
+  }, 200);
+}
+
+function updateEffects() {
+  char.classList.remove("power","speed","tired","exhausted");
+
+  if (combo >= 20) char.classList.add("power");
+  else if (combo >= 10) char.classList.add("speed");
+
+  if (fatigue > 80) char.classList.add("exhausted");
+  else if (fatigue > 50) char.classList.add("tired");
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    time--;
+    timerEl.textContent = "TIME: " + time;
+
+    if (time <= 0) {
+      clearInterval(timerInterval);
+      endGame();
+    }
+  }, 1000);
+}
+
+function endGame() {
+  input.disabled = true;
+  saveRanking();
+  showRanking();
+  alert("終了！スコア: " + score);
+}
+
+function saveRanking() {
+  const name = nameInput.value || "名無し";
+
+  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
+  data.push({name, score});
+  data.sort((a,b)=>b.score-a.score);
+  data = data.slice(0,5);
+
+  localStorage.setItem("ranking", JSON.stringify(data));
+}
+
+function showRanking() {
+  rankingEl.innerHTML = "";
+  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
+
+  data.forEach(d => {
+    const li = document.createElement("li");
+    li.textContent = d.name + " - " + d.score;
+    rankingEl.appendChild(li);
+  });
+}
+
+input.addEventListener("input", () => {
+  const val = input.value;
+
+  if (val === current) {
+    score += 50;
+    combo++;
+    fatigue = Math.max(0, fatigue - 5);
+
+    okSound.currentTime = 0;
+    okSound.play();
+
+    playLift();
+    newText();
+  } else if (!current.startsWith(val)) {
+    combo = 0;
+    fatigue = Math.min(100, fatigue + 15);
+
+    missSound.currentTime = 0;
+    missSound.play();
+  } else {
+    combo++;
+    fatigue = Math.max(0, fatigue - 2);
+    playLift();
+  }
+
+  comboEl.textContent = "COMBO x" + combo;
+  scoreEl.textContent = "SCORE: " + score;
+
+  updateCharacter();
+  updateEffects();
+});
+
+newText();
+startTimer();
+showRanking();
+</script>
+
+</body>
+</html>
+```
