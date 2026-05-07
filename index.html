@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -7,34 +6,51 @@
 
 <style>
 body {
-  background:#111;
-  color:#fff;
-  text-align:center;
-  font-family:sans-serif;
+  background: #111;
+  color: #fff;
+  text-align: center;
+  font-family: sans-serif;
 }
 
 #character {
-  width:256px;
+  width: 256px;
   image-rendering: pixelated;
   transition: all 0.2s;
 }
 
 #text {
-  font-size:24px;
-  margin:20px;
+  font-size: 24px;
+  margin: 20px;
 }
 
 #input {
-  font-size:20px;
-  padding:10px;
-  width:60%;
+  font-size: 20px;
+  padding: 10px;
+  width: 60%;
 }
 
-.combo { font-size:28px; color:yellow; }
-.power { filter: drop-shadow(0 0 10px orange); transform: scale(1.1); }
-.speed { animation: shake 0.1s infinite; }
-.tired { filter: brightness(0.7); }
-.exhausted { filter: grayscale(0.6); transform: scale(0.95); }
+.combo {
+  font-size: 28px;
+  color: yellow;
+}
+
+.power {
+  filter: drop-shadow(0 0 10px orange);
+  transform: scale(1.1);
+}
+
+.speed {
+  animation: shake 0.1s infinite;
+}
+
+.tired {
+  filter: brightness(0.7);
+}
+
+.exhausted {
+  filter: grayscale(0.6);
+  transform: scale(0.95);
+}
 
 @keyframes shake {
   0% { transform: translateX(0); }
@@ -43,8 +59,8 @@ body {
 }
 
 #nameInput {
-  margin-top:10px;
-  padding:5px;
+  margin-top: 10px;
+  padding: 5px;
 }
 </style>
 </head>
@@ -60,7 +76,14 @@ body {
 <img id="character" src="lv1_idle.png">
 
 <div id="text"></div>
-<input id="input" autofocus>
+
+<input
+  id="input"
+  autofocus
+  autocomplete="off"
+  autocorrect="off"
+  spellcheck="false"
+>
 
 <div>
   <div id="timer">TIME: 60</div>
@@ -88,13 +111,17 @@ let score = 0;
 let combo = 0;
 let fatigue = 0;
 let time = 60;
+
 let timerInterval;
+let lifting = false;
+let missLocked = false;
 
 const input = document.getElementById("input");
 const textEl = document.getElementById("text");
 const comboEl = document.getElementById("combo");
 const scoreEl = document.getElementById("score");
 const timerEl = document.getElementById("timer");
+const fatigueText = document.getElementById("fatigueText");
 const char = document.getElementById("character");
 const rankingEl = document.getElementById("ranking");
 const nameInput = document.getElementById("nameInput");
@@ -125,108 +152,201 @@ function getLevel() {
 }
 
 function updateCharacter() {
+
+  if (lifting) return;
+
   char.src = characters[getLevel()];
 }
 
 function playLift() {
+
+  if (lifting) return;
+
+  lifting = true;
+
   char.src = "lift_up.png";
+
   setTimeout(() => {
     char.src = "lift_down.png";
-  }, 100);
+  }, 120);
 
   setTimeout(() => {
     updateCharacter();
-  }, 200);
+    lifting = false;
+  }, 240);
 }
 
 function updateEffects() {
-  char.classList.remove("power","speed","tired","exhausted");
 
-  if (combo >= 20) char.classList.add("power");
-  else if (combo >= 10) char.classList.add("speed");
+  char.classList.remove(
+    "power",
+    "speed",
+    "tired",
+    "exhausted"
+  );
 
-  if (fatigue > 80) char.classList.add("exhausted");
-  else if (fatigue > 50) char.classList.add("tired");
+  // コンボ演出
+  if (combo >= 20) {
+    char.classList.add("power");
+  } else if (combo >= 10) {
+    char.classList.add("speed");
+  }
+
+  // 疲労演出
+  if (fatigue > 80) {
+    char.classList.add("exhausted");
+    fatigueText.textContent = "😵 疲労MAX";
+  }
+  else if (fatigue > 50) {
+    char.classList.add("tired");
+    fatigueText.textContent = "🥵 疲れている";
+  }
+  else {
+    fatigueText.textContent = "";
+  }
 }
 
 function startTimer() {
+
   timerInterval = setInterval(() => {
+
     time--;
+
     timerEl.textContent = "TIME: " + time;
 
     if (time <= 0) {
+
       clearInterval(timerInterval);
+
       endGame();
     }
+
   }, 1000);
 }
 
 function endGame() {
+
   input.disabled = true;
+
   saveRanking();
+
   showRanking();
+
   alert("終了！スコア: " + score);
 }
 
 function saveRanking() {
+
   const name = nameInput.value || "名無し";
 
-  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
-  data.push({name, score});
-  data.sort((a,b)=>b.score-a.score);
-  data = data.slice(0,5);
+  let data = JSON.parse(
+    localStorage.getItem("ranking") || "[]"
+  );
 
-  localStorage.setItem("ranking", JSON.stringify(data));
+  data.push({
+    name,
+    score
+  });
+
+  data.sort((a, b) => b.score - a.score);
+
+  data = data.slice(0, 5);
+
+  localStorage.setItem(
+    "ranking",
+    JSON.stringify(data)
+  );
 }
 
 function showRanking() {
+
   rankingEl.innerHTML = "";
-  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
+
+  let data = JSON.parse(
+    localStorage.getItem("ranking") || "[]"
+  );
 
   data.forEach(d => {
+
     const li = document.createElement("li");
-    li.textContent = d.name + " - " + d.score;
+
+    li.textContent =
+      d.name + " - " + d.score;
+
     rankingEl.appendChild(li);
   });
 }
 
 input.addEventListener("input", () => {
+
   const val = input.value;
 
+  // 正しい入力に戻ったら解除
+  if (current.startsWith(val)) {
+    missLocked = false;
+  }
+
+  // 完全一致
   if (val === current) {
+
     score += 50;
+
     combo++;
-    fatigue = Math.max(0, fatigue - 5);
+
+    fatigue = Math.max(
+      0,
+      fatigue - 5
+    );
 
     okSound.currentTime = 0;
     okSound.play();
 
     playLift();
+
     newText();
-  } else if (!current.startsWith(val)) {
+
+    missLocked = false;
+
+  }
+
+  // ミス
+  else if (
+    !current.startsWith(val)
+    && !missLocked
+  ) {
+
     combo = 0;
-    fatigue = Math.min(100, fatigue + 15);
+
+    fatigue = Math.min(
+      100,
+      fatigue + 15
+    );
 
     missSound.currentTime = 0;
     missSound.play();
-  } else {
-    combo++;
-    fatigue = Math.max(0, fatigue - 2);
-    playLift();
+
+    missLocked = true;
   }
 
-  comboEl.textContent = "COMBO x" + combo;
-  scoreEl.textContent = "SCORE: " + score;
+  comboEl.textContent =
+    "COMBO x" + combo;
 
-  updateCharacter();
+  scoreEl.textContent =
+    "SCORE: " + score;
+
   updateEffects();
 });
 
 newText();
+
+updateCharacter();
+
+updateEffects();
+
 startTimer();
+
 showRanking();
 </script>
 
 </body>
 </html>
-```
