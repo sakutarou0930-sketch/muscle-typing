@@ -46,6 +46,13 @@ body {
 .exhausted { filter: grayscale(0.6); transform: scale(0.95); }
 .miss { animation: miss-shake 0.2s; filter: drop-shadow(0 0 15px red); } 
 
+#missText {
+  color: #ff6666;
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
 @keyframes shake {
   0% { transform: translateX(0); }
   50% { transform: translateX(3px); }
@@ -58,6 +65,15 @@ body {
   50% { transform: translateX(10px); }
   75% { transform: translateX(-10px); }
   100% { transform: translateX(0); }
+}
+
+.type-bounce {
+  animation: bounce-type 0.1s;
+}
+@keyframes bounce-type {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
 }
 
 #nameInput {
@@ -79,19 +95,32 @@ body {
   background: darkorange;
 }
 
-/* リトライボタン画像用のスタイル */
 #retryButton {
-  display: none; /* 初期状態では非表示 */
+  display: none; 
   cursor: pointer;
   margin: 30px auto;
-  max-width: 250px; /* 画像が大きすぎる場合用 */
+  max-width: 250px; 
   transition: transform 0.1s;
 }
 #retryButton:hover {
-  transform: scale(1.05); /* マウスオーバーで少し大きく */
+  transform: scale(1.05); 
 }
 #retryButton:active {
-  transform: scale(0.95); /* クリックで少しへこむ */
+  transform: scale(0.95); 
+}
+
+#imeWarning {
+  display: none;
+  color: #ff4444;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 10px auto;
+  padding: 10px;
+  border: 2px solid #ff4444;
+  background: rgba(255,0,0,0.1);
+  width: 80%;
+  max-width: 600px;
+  border-radius: 5px;
 }
 </style>
 </head>
@@ -108,6 +137,11 @@ body {
 
 <img id="character" src="lv1_idle.png" alt="筋トレキャラ">
 
+<div id="imeWarning">
+  ⚠️ 日本語入力（IME）がオンになっています！<br>
+  キーボードの「半角/全角」キーを押して、直接入力（英数モード）にしてからタイピングしてください。
+</div>
+
 <div id="text-container">
   <div id="text-jp">ゲームをスタートしてください</div>
   <div id="text-en"></div>
@@ -118,3 +152,324 @@ body {
   <div id="combo" class="combo">COMBO x0</div>
   <div id="score">SCORE: 0</div>
   <div id="fatigueText">疲労度: 0%</div>
+  <div id="missText">MISS: 0</div> 
+</div>
+
+<h2>🏆 ランキング</h2>
+<ol id="ranking"></ol>
+
+<img id="retryButton" src="retry.png" alt="もう一度挑戦する">
+
+<!-- 音声ファイル群 -->
+<audio id="bgm" loop></audio> 
+<audio id="startSound" src="Ohoo.mp3"></audio> 
+<audio id="okSound" src="ok.mp3"></audio>      
+<audio id="missSound" src="NG.mp3"></audio>    
+
+<script>
+const FATIGUE_LV1 = 30; 
+const FATIGUE_LV2 = 60; 
+const FATIGUE_LV3 = 90; 
+
+const COMBO_LV1 = 15;   
+const COMBO_LV2 = 30;   
+const COMBO_LV3 = 50;   
+
+const texts = [
+  { jp: "スクワットは下半身を鍛える", en: "sukuwattohakahanshinwokitaeru" },
+  { jp: "タンパク質は筋肉の材料", en: "tanpakushitsuhakinnikunozairyou" },
+  { jp: "フォームが重要", en: "fo-mugajuuyou" },
+  { jp: "継続は力なり", en: "keizokuhatikaranari" }
+];
+
+const bgmList = [
+  "BGM_Fighting_spirits.mp3",
+  "BGM_INTENSE_TRAINING.mp3",
+  "BGM_Training.mp3"
+];
+
+let currentJp = "";
+let currentEn = "";
+let typedEn = "";   
+let untypedEn = ""; 
+let score = 0;
+let combo = 0;
+let fatigue = 0;
+let missCount = 0; 
+let time = 60;
+let timerInterval;
+let isPlaying = false; 
+let isBgmPlaying = false; // 追加：BGMが鳴っているかどうかの判定
+
+const textJpEl = document.getElementById("text-jp");
+const textEnEl = document.getElementById("text-en");
+const comboEl = document.getElementById("combo");
+const scoreEl = document.getElementById("score");
+const timerEl = document.getElementById("timer");
+const fatigueEl = document.getElementById("fatigueText");
+const missTextEl = document.getElementById("missText"); 
+const char = document.getElementById("character");
+const rankingEl = document.getElementById("ranking");
+const nameInput = document.getElementById("nameInput");
+const startButton = document.getElementById("startButton");
+const retryButton = document.getElementById("retryButton");
+
+const bgmAudio = document.getElementById("bgm"); 
+const startSound = document.getElementById("startSound"); 
+const okSound = document.getElementById("okSound");
+const missSound = document.getElementById("missSound");
+
+const idleCharacters = [
+  "lv1_idle.png",
+  "lv2_idle.png",
+  "lv3_idle.png",
+  "lv4_idle.png",
+  "lv5_idle.png"
+];
+
+// =====================================
+// BGMをどこかでクリック/キー入力した瞬間に鳴らす処理
+// =====================================
+function startBackgroundMusic() {
+  if (isBgmPlaying) return; // すでに鳴っていれば何もしない
+
+  const randomBGM = bgmList[Math.floor(Math.random() * bgmList.length)];
+  bgmAudio.src = randomBGM;
+  bgmAudio.volume = 0.3; 
+
+  // 再生を試みる
+  bgmAudio.play().then(() => {
+    isBgmPlaying = true; // 正常に再生されたらフラグをオン
+  }).catch(function(error) {
+    // クリック前に勝手に実行されてブラウザにブロックされた場合は無視（次のクリックを待つ）
+  });
+}
+
+// 画面のどこかをクリックするか、キーボードを押した瞬間にBGMをスタート
+document.addEventListener("click", startBackgroundMusic);
+document.addEventListener("keydown", startBackgroundMusic);
+// =====================================
+
+function newText() {
+  const rnd = texts[Math.floor(Math.random() * texts.length)];
+  currentJp = rnd.jp;
+  currentEn = rnd.en;
+  typedEn = "";
+  untypedEn = currentEn;
+  updateTextDisplay();
+}
+
+function updateTextDisplay() {
+  textJpEl.textContent = currentJp;
+  textEnEl.innerHTML = `<span class="typed">${typedEn}</span>${untypedEn}`;
+}
+
+function getLevel() {
+  if (score < 100) return 0;
+  if (score < 300) return 1;
+  if (score < 600) return 2;
+  if (score < 1000) return 3;
+  return 4;
+}
+
+function updateCharacter() {
+  if (fatigue >= FATIGUE_LV3) {
+    char.src = "exhausted.png";
+    return;
+  } else if (fatigue >= FATIGUE_LV2) {
+    char.src = "tired_big.png";
+    return;
+  } else if (fatigue >= FATIGUE_LV1) {
+    char.src = "tired_smal.png";
+    return;
+  }
+
+  if (combo >= COMBO_LV3) {
+    char.src = "aura.png";
+    return;
+  } else if (combo >= COMBO_LV2) {
+    char.src = "speed.png";
+    return;
+  } else if (combo >= COMBO_LV1) {
+    char.src = "double_dumbbell.png";
+    return;
+  }
+
+  char.src = idleCharacters[getLevel()];
+}
+
+let liftTimeout1, liftTimeout2;
+
+function playLift() {
+  clearTimeout(liftTimeout1);
+  clearTimeout(liftTimeout2);
+
+  char.classList.remove("type-bounce");
+  void char.offsetWidth;
+  char.classList.add("type-bounce");
+
+  if (combo >= COMBO_LV1 || fatigue >= FATIGUE_LV1) {
+    updateCharacter();
+    return;
+  }
+
+  char.src = "lift_up.png";
+
+  liftTimeout1 = setTimeout(() => {
+    char.src = "lift_down.png";
+  }, 100);
+
+  liftTimeout2 = setTimeout(() => {
+    updateCharacter();
+  }, 200);
+}
+
+function updateEffects() {
+  char.classList.remove("power","speed","tired","exhausted","miss");
+
+  if (combo >= COMBO_LV3) char.classList.add("power");
+  else if (combo >= COMBO_LV2) char.classList.add("speed");
+
+  if (fatigue >= FATIGUE_LV3) char.classList.add("exhausted");
+  else if (fatigue >= FATIGUE_LV2) char.classList.add("tired");
+}
+
+function triggerMissEffect() {
+  char.classList.remove("miss");
+  void char.offsetWidth; 
+  char.classList.add("miss");
+}
+
+function startGame() {
+  if (isPlaying) return;
+  isPlaying = true;
+  score = 0;
+  combo = 0;
+  fatigue = 0;
+  missCount = 0; 
+  time = 60;
+  
+  startSound.currentTime = 0;
+  startSound.play().catch(e => console.log(e));
+  
+  startButton.style.display = "none";
+  retryButton.style.display = "none"; 
+  nameInput.disabled = true; 
+  document.getElementById("imeWarning").style.display = "none";
+
+  updateDisplay();
+  newText();
+  updateCharacter();
+
+  timerInterval = setInterval(() => {
+    time--;
+    timerEl.textContent = "TIME: " + time;
+
+    if (time <= 0) {
+      clearInterval(timerInterval);
+      endGame();
+    }
+  }, 1000);
+}
+
+function endGame() {
+  isPlaying = false;
+  
+  // ゲーム終了時のBGMストップをなくし、そのままBGMが流れ続けるようにしました
+  
+  retryButton.style.display = "block";
+  nameInput.disabled = false;
+  
+  textJpEl.textContent = "終了！";
+  textEnEl.innerHTML = "";
+
+  saveRanking();
+  showRanking();
+  
+  setTimeout(() => alert("終了！\nスコア: " + score + "\nミス回数: " + missCount + "回"), 10);
+}
+
+function saveRanking() {
+  const name = nameInput.value || "名無し";
+  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
+  data.push({name, score});
+  data.sort((a,b)=>b.score-a.score);
+  data = data.slice(0,5);
+  localStorage.setItem("ranking", JSON.stringify(data));
+}
+
+function showRanking() {
+  rankingEl.innerHTML = "";
+  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
+  data.forEach(d => {
+    const li = document.createElement("li");
+    li.textContent = d.name + " - " + d.score;
+    rankingEl.appendChild(li);
+  });
+}
+
+function updateDisplay() {
+  comboEl.textContent = "COMBO x" + combo;
+  scoreEl.textContent = "SCORE: " + score;
+  fatigueEl.textContent = "疲労度: " + fatigue + "%";
+  missTextEl.textContent = "MISS: " + missCount; 
+}
+
+startButton.addEventListener("click", startGame);
+retryButton.addEventListener("click", startGame); 
+
+document.addEventListener("keydown", (e) => {
+  if (!isPlaying) return;
+  if (document.activeElement === nameInput) return; 
+
+  if (e.keyCode === 229 || e.key === "Process" || e.isComposing) {
+    document.getElementById("imeWarning").style.display = "block";
+    return;
+  } else {
+    document.getElementById("imeWarning").style.display = "none";
+  }
+
+  if (e.key.length !== 1) return; 
+
+  const key = e.key.toLowerCase(); 
+
+  if (untypedEn.startsWith(key)) {
+    typedEn += untypedEn[0];
+    untypedEn = untypedEn.substring(1);
+
+    combo++;
+    score += 10; 
+    fatigue = Math.max(0, fatigue - 1); 
+
+    playLift(); 
+    updateTextDisplay();
+
+    if (untypedEn.length === 0) {
+      score += 50;
+      fatigue = Math.max(0, fatigue - 5);
+      okSound.currentTime = 0;
+      okSound.play().catch(e => {}); 
+      newText();
+    }
+  } 
+  else {
+    combo = 0;
+    fatigue = Math.min(100, fatigue + 15);
+    missCount++; 
+    
+    missSound.currentTime = 0;
+    missSound.play().catch(e => {}); 
+    triggerMissEffect(); 
+
+    updateCharacter();
+  }
+
+  updateDisplay();
+  updateEffects();
+});
+
+showRanking();
+</script>
+
+</body>
+</html>
