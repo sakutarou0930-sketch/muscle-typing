@@ -28,15 +28,15 @@ body {
 }
 
 #text-en {
-  font-size:18px;
-  color: #aaa;
+  font-size:26px; 
+  color: #555;    
   margin-top: 5px;
+  letter-spacing: 2px;
 }
 
-#input {
-  font-size:20px;
-  padding:10px;
-  width:60%;
+.typed {
+  color: #0f0;
+  text-shadow: 0 0 5px #0f0;
 }
 
 .combo { font-size:28px; color:yellow; }
@@ -44,6 +44,7 @@ body {
 .speed { animation: shake 0.1s infinite; }
 .tired { filter: brightness(0.7); }
 .exhausted { filter: grayscale(0.6); transform: scale(0.95); }
+.miss { animation: miss-shake 0.2s; filter: drop-shadow(0 0 15px red); } 
 
 @keyframes shake {
   0% { transform: translateX(0); }
@@ -51,9 +52,46 @@ body {
   100% { transform: translateX(0); }
 }
 
+@keyframes miss-shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  50% { transform: translateX(10px); }
+  75% { transform: translateX(-10px); }
+  100% { transform: translateX(0); }
+}
+
 #nameInput {
   margin-top:10px;
   padding:5px;
+}
+
+#startButton {
+  padding: 10px 20px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  background: orange;
+  border: none;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+#startButton:hover {
+  background: darkorange;
+}
+
+/* リトライボタン画像用のスタイル */
+#retryButton {
+  display: none; /* 初期状態では非表示 */
+  cursor: pointer;
+  margin: 30px auto;
+  max-width: 250px; /* 画像が大きすぎる場合用 */
+  transition: transform 0.1s;
+}
+#retryButton:hover {
+  transform: scale(1.05); /* マウスオーバーで少し大きく */
+}
+#retryButton:active {
+  transform: scale(0.95); /* クリックで少しへこむ */
 }
 </style>
 </head>
@@ -63,194 +101,20 @@ body {
 <h1>💪 筋トレタイピング 💪</h1>
 
 <input id="nameInput" placeholder="名前を入力">
+<br><br>
+<button id="startButton">ゲームスタート！</button>
 
 <br><br>
 
 <img id="character" src="lv1_idle.png" alt="筋トレキャラ">
 
 <div id="text-container">
-  <div id="text-jp"></div>
+  <div id="text-jp">ゲームをスタートしてください</div>
   <div id="text-en"></div>
 </div>
-<!-- プレースホルダーで半角英数を促す -->
-<input id="input" autofocus placeholder="半角英数で入力">
 
 <div>
   <div id="timer">TIME: 60</div>
   <div id="combo" class="combo">COMBO x0</div>
   <div id="score">SCORE: 0</div>
-  <div id="fatigueText">疲労度: 0%</div> <!-- 疲労度表示 -->
-</div>
-
-<h2>🏆 ランキング</h2>
-<ol id="ranking"></ol>
-
-<audio id="okSound" src="ok.mp3"></audio>
-<audio id="missSound" src="miss.mp3"></audio>
-
-<script>
-// 表示用の日本語と、判定用のローマ字をセットにする
-const texts = [
-  { jp: "スクワットは下半身を鍛える", en: "sukuwattohakahanshinwokitaeru" },
-  { jp: "タンパク質は筋肉の材料", en: "tanpakushitsuhakinnikunozairyou" },
-  { jp: "フォームが重要", en: "fo-mugajuuyou" },
-  { jp: "継続は力なり", en: "keizokuhatikaranari" }
-];
-
-let currentJp = "";
-let currentEn = "";
-let score = 0;
-let combo = 0;
-let fatigue = 0;
-let time = 60;
-let timerInterval;
-
-const input = document.getElementById("input");
-const textJpEl = document.getElementById("text-jp");
-const textEnEl = document.getElementById("text-en");
-const comboEl = document.getElementById("combo");
-const scoreEl = document.getElementById("score");
-const timerEl = document.getElementById("timer");
-const fatigueEl = document.getElementById("fatigueText"); // 追加
-const char = document.getElementById("character");
-const rankingEl = document.getElementById("ranking");
-const nameInput = document.getElementById("nameInput");
-
-const okSound = document.getElementById("okSound");
-const missSound = document.getElementById("missSound");
-
-const characters = [
-  "lv1_idle.png",
-  "lv2_idle.png",
-  "lv3_idle.png",
-  "lv4_idle.png",
-  "lv5_idle.png"
-];
-
-function newText() {
-  const rnd = texts[Math.floor(Math.random() * texts.length)];
-  currentJp = rnd.jp;
-  currentEn = rnd.en;
-  textJpEl.textContent = currentJp;
-  textEnEl.textContent = currentEn;
-  input.value = "";
-}
-
-function getLevel() {
-  if (score < 100) return 0;
-  if (score < 300) return 1;
-  if (score < 600) return 2;
-  if (score < 1000) return 3;
-  return 4;
-}
-
-function updateCharacter() {
-  char.src = characters[getLevel()];
-}
-
-function playLift() {
-  char.src = "lift_up.png";
-  setTimeout(() => {
-    char.src = "lift_down.png";
-  }, 100);
-
-  setTimeout(() => {
-    updateCharacter();
-  }, 200);
-}
-
-function updateEffects() {
-  char.classList.remove("power","speed","tired","exhausted");
-
-  if (combo >= 20) char.classList.add("power");
-  else if (combo >= 10) char.classList.add("speed");
-
-  if (fatigue > 80) char.classList.add("exhausted");
-  else if (fatigue > 50) char.classList.add("tired");
-}
-
-function startTimer() {
-  timerInterval = setInterval(() => {
-    time--;
-    timerEl.textContent = "TIME: " + time;
-
-    if (time <= 0) {
-      clearInterval(timerInterval);
-      endGame();
-    }
-  }, 1000);
-}
-
-function endGame() {
-  input.disabled = true;
-  saveRanking();
-  showRanking();
-  alert("終了！スコア: " + score);
-}
-
-function saveRanking() {
-  const name = nameInput.value || "名無し";
-
-  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
-  data.push({name, score});
-  data.sort((a,b)=>b.score-a.score);
-  data = data.slice(0,5);
-
-  localStorage.setItem("ranking", JSON.stringify(data));
-}
-
-function showRanking() {
-  rankingEl.innerHTML = "";
-  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
-
-  data.forEach(d => {
-    const li = document.createElement("li");
-    li.textContent = d.name + " - " + d.score;
-    rankingEl.appendChild(li);
-  });
-}
-
-input.addEventListener("input", () => {
-  const val = input.value;
-
-  // ローマ字(currentEn)で判定を行う
-  if (val === currentEn) {
-    // 全文正解
-    score += 50;
-    combo++;
-    fatigue = Math.max(0, fatigue - 5);
-
-    okSound.currentTime = 0;
-    okSound.play();
-
-    playLift(); // 打ち終わった時だけリフトアップ！
-    newText();
-  } else if (!currentEn.startsWith(val)) {
-    // ミスタイプ
-    combo = 0;
-    fatigue = Math.min(100, fatigue + 15);
-
-    missSound.currentTime = 0;
-    missSound.play();
-  } else {
-    // 1文字正しく打てた時（入力途中）
-    // 途中でもコンボを増やしたい場合はここに入れますが、今回は疲労度回復のみに調整
-    fatigue = Math.max(0, fatigue - 1); // 少しだけ回復
-  }
-
-  // 表示の更新
-  comboEl.textContent = "COMBO x" + combo;
-  scoreEl.textContent = "SCORE: " + score;
-  fatigueEl.textContent = "疲労度: " + fatigue + "%"; // 疲労度を画面に反映
-
-  updateCharacter();
-  updateEffects();
-});
-
-newText();
-startTimer();
-showRanking();
-</script>
-
-</body>
-</html>
+  <div id="fatigueText">疲労度: 0%</div>
