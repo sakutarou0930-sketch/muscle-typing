@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -7,34 +6,55 @@
 
 <style>
 body {
-  background:#111;
-  color:#fff;
-  text-align:center;
-  font-family:sans-serif;
+  background: #111;
+  color: white;
+  text-align: center;
+  font-family: sans-serif;
+}
+
+h1 {
+  margin-top: 20px;
 }
 
 #character {
-  width:256px;
+  width: 256px;
   image-rendering: pixelated;
   transition: all 0.2s;
 }
 
 #text {
-  font-size:24px;
-  margin:20px;
+  font-size: 28px;
+  margin: 20px;
 }
 
 #input {
-  font-size:20px;
-  padding:10px;
-  width:60%;
+  font-size: 22px;
+  padding: 10px;
+  width: 60%;
+  text-align: center;
 }
 
-.combo { font-size:28px; color:yellow; }
-.power { filter: drop-shadow(0 0 10px orange); transform: scale(1.1); }
-.speed { animation: shake 0.1s infinite; }
-.char.src = "tired_small.png";
-.exhausted { filter: grayscale(0.6); transform: scale(0.95); }
+#timer,
+#score,
+#combo,
+#fatigueText {
+  font-size: 24px;
+  margin-top: 10px;
+}
+
+#combo {
+  color: yellow;
+  font-weight: bold;
+}
+
+.power {
+  filter: drop-shadow(0 0 12px orange);
+  transform: scale(1.1);
+}
+
+.speed {
+  animation: shake 0.1s infinite;
+}
 
 @keyframes shake {
   0% { transform: translateX(0); }
@@ -42,9 +62,13 @@ body {
   100% { transform: translateX(0); }
 }
 
-#nameInput {
-  margin-top:10px;
-  padding:5px;
+#ranking {
+  list-style: none;
+  padding: 0;
+}
+
+#ranking li {
+  margin: 5px 0;
 }
 </style>
 </head>
@@ -60,14 +84,13 @@ body {
 <img id="character" src="lv1_idle.png">
 
 <div id="text"></div>
-<input id="input" autofocus>
 
-<div>
-  <div id="timer">TIME: 60</div>
-  <div id="combo" class="combo">COMBO x0</div>
-  <div id="score">SCORE: 0</div>
-  <div id="fatigueText"></div>
-</div>
+<input id="input" autocomplete="off">
+
+<div id="timer">TIME: 60</div>
+<div id="score">SCORE: 0</div>
+<div id="combo">COMBO x0</div>
+<div id="fatigueText"></div>
 
 <h2>🏆 ランキング</h2>
 <ol id="ranking"></ol>
@@ -76,11 +99,14 @@ body {
 <audio id="missSound" src="miss.mp3"></audio>
 
 <script>
+
 const texts = [
   "スクワットは下半身を鍛える",
   "タンパク質は筋肉の材料",
   "フォームが重要",
-  "継続は力なり"
+  "継続は力なり",
+  "筋トレは習慣が大事",
+  "正しい姿勢を意識する"
 ];
 
 let current = "";
@@ -88,21 +114,22 @@ let score = 0;
 let combo = 0;
 let fatigue = 0;
 let time = 60;
-let timerInterval;
+let timerStarted = false;
 
 const input = document.getElementById("input");
 const textEl = document.getElementById("text");
-const comboEl = document.getElementById("combo");
 const scoreEl = document.getElementById("score");
+const comboEl = document.getElementById("combo");
 const timerEl = document.getElementById("timer");
-const char = document.getElementById("character");
+const fatigueText = document.getElementById("fatigueText");
+const character = document.getElementById("character");
 const rankingEl = document.getElementById("ranking");
 const nameInput = document.getElementById("nameInput");
 
 const okSound = document.getElementById("okSound");
 const missSound = document.getElementById("missSound");
 
-const characters = [
+const normalCharacters = [
   "lv1_idle.png",
   "lv2_idle.png",
   "lv3_idle.png",
@@ -125,13 +152,38 @@ function getLevel() {
 }
 
 function updateCharacter() {
-  char.src = characters[getLevel()];
+
+  if (fatigue > 80) {
+    character.src = "exhausted.png";
+    fatigueText.textContent = "限界状態…";
+    return;
+  }
+
+  if (fatigue > 50) {
+    character.src = "tired_big.png";
+    fatigueText.textContent = "かなり疲れている";
+    return;
+  }
+
+  if (fatigue > 30) {
+    character.src = "tired_small.png";
+    fatigueText.textContent = "少し疲れている";
+    return;
+  }
+
+  fatigueText.textContent = "";
+
+  character.src = normalCharacters[getLevel()];
 }
 
 function playLift() {
-  char.src = "lift_up.png";
+
+  if (fatigue > 80) return;
+
+  character.src = "lift_up.png";
+
   setTimeout(() => {
-    char.src = "lift_down.png";
+    character.src = "lift_down.png";
   }, 100);
 
   setTimeout(() => {
@@ -141,122 +193,143 @@ function playLift() {
 
 function updateEffects() {
 
-  // 疲労画像
-  if (fatigue > 80) {
-    char.src = "exhausted.png";
-    return;
-  }
-
-  if (fatigue > 50) {
-    char.src = "tired_big.png";
-    return;
-  }
-
-  if (fatigue > 30) {
-    char.src = "tired_small.png";
-    return;
-  }
-
-  // 通常キャラ
-  updateCharacter();
-
-  // コンボ演出
-  char.classList.remove("power","speed");
+  character.classList.remove("power");
+  character.classList.remove("speed");
 
   if (combo >= 20) {
-    char.classList.add("power");
+    character.classList.add("power");
   }
   else if (combo >= 10) {
-    char.classList.add("speed");
+    character.classList.add("speed");
   }
 }
-  char.classList.remove("power","speed","tired","exhausted");
 
-  if (combo >= 20) char.classList.add("power");
-  else if (combo >= 10) char.classList.add("speed");
+function updateUI() {
+  scoreEl.textContent = "SCORE: " + score;
+  comboEl.textContent = "COMBO x" + combo;
 
-  if (fatigue > 80) char.classList.add("exhausted");
-  else if (fatigue > 50) char.classList.add("tired");
+  updateCharacter();
+  updateEffects();
 }
 
 function startTimer() {
-  timerInterval = setInterval(() => {
+
+  const timer = setInterval(() => {
+
     time--;
+
     timerEl.textContent = "TIME: " + time;
 
     if (time <= 0) {
-      clearInterval(timerInterval);
-      endGame();
+
+      clearInterval(timer);
+
+      input.disabled = true;
+
+      saveRanking();
+
+      showRanking();
+
+      alert("終了！ SCORE : " + score);
+
     }
+
   }, 1000);
 }
 
-function endGame() {
-  input.disabled = true;
-  saveRanking();
-  showRanking();
-  alert("終了！スコア: " + score);
-}
-
 function saveRanking() {
+
   const name = nameInput.value || "名無し";
 
-  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
-  data.push({name, score});
-  data.sort((a,b)=>b.score-a.score);
-  data = data.slice(0,5);
+  let ranking = JSON.parse(localStorage.getItem("muscleRanking") || "[]");
 
-  localStorage.setItem("ranking", JSON.stringify(data));
+  ranking.push({
+    name: name,
+    score: score
+  });
+
+  ranking.sort((a, b) => b.score - a.score);
+
+  ranking = ranking.slice(0, 5);
+
+  localStorage.setItem("muscleRanking", JSON.stringify(ranking));
 }
 
 function showRanking() {
-  rankingEl.innerHTML = "";
-  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
 
-  data.forEach(d => {
+  rankingEl.innerHTML = "";
+
+  let ranking = JSON.parse(localStorage.getItem("muscleRanking") || "[]");
+
+  ranking.forEach(r => {
+
     const li = document.createElement("li");
-    li.textContent = d.name + " - " + d.score;
+
+    li.textContent = r.name + " - " + r.score;
+
     rankingEl.appendChild(li);
+
   });
 }
 
 input.addEventListener("input", () => {
-  const val = input.value;
 
-  if (val === current) {
+  if (!timerStarted) {
+    timerStarted = true;
+    startTimer();
+  }
+
+  const value = input.value;
+
+  if (value === current) {
+
     score += 50;
     combo++;
-    fatigue = Math.max(0, fatigue - 5);
+
+    fatigue -= 5;
+
+    if (fatigue < 0) fatigue = 0;
 
     okSound.currentTime = 0;
     okSound.play();
 
     playLift();
+
     newText();
-  } else if (!current.startsWith(val)) {
+  }
+
+  else if (!current.startsWith(value)) {
+
     combo = 0;
-    fatigue = Math.min(100, fatigue + 15);
+
+    fatigue += 15;
+
+    if (fatigue > 100) fatigue = 100;
 
     missSound.currentTime = 0;
     missSound.play();
-  } else {
+  }
+
+  else {
+
     combo++;
-    fatigue = Math.max(0, fatigue - 2);
+
+    fatigue -= 2;
+
+    if (fatigue < 0) fatigue = 0;
+
     playLift();
   }
 
-  comboEl.textContent = "COMBO x" + combo;
-  scoreEl.textContent = "SCORE: " + score;
+  updateUI();
 
-  updateCharacter();
-  updateEffects();
 });
 
 newText();
-startTimer();
 showRanking();
+updateUI();
+
 </script>
 
 </body>
 </html>
-```
