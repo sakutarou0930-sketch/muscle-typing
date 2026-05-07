@@ -140,6 +140,36 @@ function playLift() {
 }
 
 function updateEffects() {
+
+  // 疲労画像
+  if (fatigue > 80) {
+    char.src = "exhausted.png";
+    return;
+  }
+
+  if (fatigue > 50) {
+    char.src = "tired_big.png";
+    return;
+  }
+
+  if (fatigue > 30) {
+    char.src = "tired_small.png";
+    return;
+  }
+
+  // 通常キャラ
+  updateCharacter();
+
+  // コンボ演出
+  char.classList.remove("power","speed");
+
+  if (combo >= 20) {
+    char.classList.add("power");
+  }
+  else if (combo >= 10) {
+    char.classList.add("speed");
+  }
+}
   char.classList.remove("power","speed","tired","exhausted");
 
   if (combo >= 20) char.classList.add("power");
