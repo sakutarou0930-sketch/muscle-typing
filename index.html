@@ -1,142 +1,15 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>筋トレタイピング</title>
-
-<style>
-
-body{
-background:#111;
-color:white;
-text-align:center;
-font-family:sans-serif;
-overflow:hidden;
-}
-
-h1{
-margin-top:20px;
-}
-
-#character{
-width:256px;
-image-rendering:pixelated;
-transition:0.2s;
-}
-
-#text{
-font-size:38px;
-margin-top:20px;
-}
-
-#roma{
-font-size:22px;
-color:#aaa;
-margin-bottom:20px;
-}
-
-#input{
-font-size:26px;
-padding:10px;
-width:60%;
-text-align:center;
-}
-
-#score{
-font-size:24px;
-margin-top:20px;
-}
-
-#combo{
-font-size:30px;
-color:yellow;
-margin-top:10px;
-font-weight:bold;
-}
-
-#timer{
-font-size:28px;
-margin-top:10px;
-color:#00ffcc;
-}
-
-.power{
-filter:drop-shadow(0 0 15px orange);
-transform:scale(1.1);
-}
-
-.speed{
-animation:shake 0.08s infinite;
-}
-
-@keyframes shake{
-0%{transform:translateX(0);}
-50%{transform:translateX(4px);}
-100%{transform:translateX(0);}
-}
-
-</style>
-
-</head>
-
-<body>
-
-<h1>💪 筋トレタイピング 💪</h1>
-
-<img id="character" src="lv1_idle.png">
-
-<div id="text"></div>
-<div id="roma"></div>
-
-<input id="input" autofocus>
-
-<div id="timer">TIME : 60</div>
-<div id="score">SCORE : 0</div>
-<div id="combo">COMBO x0</div>
-
 <script>
 
 const questions = [
 
-{
-jp:"スクワット",
-roma:"sukuwatto"
-},
-
-{
-jp:"タンパク質",
-roma:"tanpakushitsu"
-},
-
-{
-jp:"フォーム",
-roma:"fo-mu"
-},
-
-{
-jp:"継続は力なり",
-roma:"keizokuhachikaranari"
-},
-
-{
-jp:"ベンチプレス",
-roma:"benchipuresu"
-},
-
-{
-jp:"デッドリフト",
-roma:"deddorifuto"
-},
-
-{
-jp:"筋肉痛",
-roma:"kinnnikutsuu"
-},
-
-{
-jp:"プロテイン",
-roma:"purotein"
-}
+{ jp:"スクワット", roma:"sukuwatto" },
+{ jp:"タンパク質", roma:"tanpakushitsu" },
+{ jp:"フォーム", roma:"fo-mu" },
+{ jp:"継続は力なり", roma:"keizokuhachikaranari" },
+{ jp:"ベンチプレス", roma:"benchipuresu" },
+{ jp:"デッドリフト", roma:"deddorifuto" },
+{ jp:"筋肉痛", roma:"kinnikutsuu" },
+{ jp:"プロテイン", roma:"purotein" }
 
 ];
 
@@ -150,39 +23,23 @@ let time = 60;
 let isAnimating = false;
 let isTired = false;
 
-const text =
-document.getElementById("text");
-
-const roma =
-document.getElementById("roma");
-
-const input =
-document.getElementById("input");
-
-const scoreText =
-document.getElementById("score");
-
-const comboText =
-document.getElementById("combo");
-
-const timerText =
-document.getElementById("timer");
-
-const character =
-document.getElementById("character");
+const text = document.getElementById("text");
+const roma = document.getElementById("roma");
+const input = document.getElementById("input");
+const scoreText = document.getElementById("score");
+const comboText = document.getElementById("combo");
+const timerText = document.getElementById("timer");
+const character = document.getElementById("character");
 
 function setQuestion(){
 
 currentQuestion =
 questions[
-Math.floor(Math.random()*questions.length)
+Math.floor(Math.random() * questions.length)
 ];
 
-text.textContent =
-currentQuestion.jp;
-
-roma.textContent =
-currentQuestion.roma;
+text.textContent = currentQuestion.jp;
+roma.textContent = currentQuestion.roma;
 
 input.value = "";
 
@@ -370,12 +227,7 @@ updateCharacter();
 });
 
 setQuestion();
-
 updateCharacter();
-
 startTimer();
 
 </script>
-
-</body>
-</html>
