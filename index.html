@@ -1,3 +1,94 @@
+```html
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+<meta charset="UTF-8">
+<title>筋トレタイピング</title>
+
+<style>
+
+body{
+background:#111;
+color:white;
+text-align:center;
+font-family:sans-serif;
+overflow:hidden;
+}
+
+h1{
+margin-top:20px;
+}
+
+#character{
+width:256px;
+image-rendering:pixelated;
+transition:0.2s;
+}
+
+#text{
+font-size:38px;
+margin-top:20px;
+}
+
+#roma{
+font-size:22px;
+color:#aaa;
+margin-bottom:20px;
+}
+
+#input{
+font-size:26px;
+padding:10px;
+width:60%;
+text-align:center;
+}
+
+#score,
+#combo,
+#timer{
+font-size:26px;
+margin-top:10px;
+}
+
+#combo{
+color:yellow;
+font-weight:bold;
+}
+
+.power{
+filter:drop-shadow(0 0 15px orange);
+transform:scale(1.08);
+}
+
+.speed{
+animation:shake 0.08s infinite;
+}
+
+@keyframes shake{
+0%{transform:translateX(0);}
+50%{transform:translateX(4px);}
+100%{transform:translateX(0);}
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>💪 筋トレタイピング 💪</h1>
+
+<img id="character" src="lv1_idle.png">
+
+<div id="text"></div>
+<div id="roma"></div>
+
+<input id="input" autocomplete="off" autofocus>
+
+<div id="timer">TIME : 60</div>
+<div id="score">SCORE : 0</div>
+<div id="combo">COMBO x0</div>
+
 <script>
 
 const questions = [
@@ -48,6 +139,9 @@ input.value = "";
 function updateCharacter(){
 
 if(isAnimating) return;
+
+character.classList.remove("power");
+character.classList.remove("speed");
 
 if(isTired){
 
@@ -102,20 +196,10 @@ if(combo >= 20){
 character.classList.add("power");
 
 }
-else{
-
-character.classList.remove("power");
-
-}
 
 if(combo >= 10){
 
 character.classList.add("speed");
-
-}
-else{
-
-character.classList.remove("speed");
 
 }
 
@@ -140,6 +224,22 @@ isAnimating = false;
 updateCharacter();
 
 },1000);
+
+}
+
+function showTired(){
+
+isTired = true;
+
+updateCharacter();
+
+setTimeout(()=>{
+
+isTired = false;
+
+updateCharacter();
+
+},1200);
 
 }
 
@@ -207,22 +307,14 @@ combo = 0;
 
 fatigue++;
 
-isTired = true;
-
 comboText.textContent =
 "COMBO x0";
 
-updateCharacter();
-
-setTimeout(()=>{
-
-isTired = false;
-
-updateCharacter();
-
-},1200);
+showTired();
 
 }
+
+updateCharacter();
 
 });
 
@@ -231,3 +323,7 @@ updateCharacter();
 startTimer();
 
 </script>
+
+</body>
+</html>
+```
