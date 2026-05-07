@@ -386,6 +386,14 @@ function triggerMissEffect() {
 
 function startGame() {
   if (isPlaying) return;
+  
+  // 名前が入力されていない場合はアラートを出して開始しない
+  if (nameInput.value.trim() === "") {
+    alert("名前を入力してください！");
+    nameInput.focus(); // 入力欄にフォーカスを当てる
+    return;
+  }
+
   isPlaying = true;
   score = 0;
   combo = 0;
