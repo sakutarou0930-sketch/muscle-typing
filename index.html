@@ -5,11 +5,16 @@
 <title>筋トレタイピング</title>
 
 <style>
+
 body{
 background:#111;
 color:white;
 text-align:center;
 font-family:sans-serif;
+}
+
+h1{
+margin-top:20px;
 }
 
 #character{
@@ -18,14 +23,25 @@ image-rendering:pixelated;
 }
 
 #text{
-font-size:32px;
+font-size:36px;
 margin-top:20px;
+}
+
+#roma{
+font-size:20px;
+color:#aaa;
+margin-bottom:20px;
 }
 
 #input{
 font-size:24px;
 padding:10px;
 width:60%;
+text-align:center;
+}
+
+#score{
+font-size:24px;
 margin-top:20px;
 }
 
@@ -36,6 +52,7 @@ margin-top:10px;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -44,7 +61,8 @@ margin-top:10px;
 
 <img id="character" src="lv1_idle.png">
 
-<div id="text">loading...</div>
+<div id="text"></div>
+<div id="roma"></div>
 
 <input id="input" autofocus>
 
@@ -66,8 +84,8 @@ roma:"tanpakushitsu"
 },
 
 {
-jp:"フォームが重要",
-roma:"fo-mugajuuyou"
+jp:"フォーム",
+roma:"fo-mu"
 },
 
 {
@@ -81,10 +99,23 @@ let currentQuestion;
 let score = 0;
 let combo = 0;
 
-const text = document.getElementById("text");
-const input = document.getElementById("input");
-const scoreText = document.getElementById("score");
-const comboText = document.getElementById("combo");
+const text =
+document.getElementById("text");
+
+const roma =
+document.getElementById("roma");
+
+const input =
+document.getElementById("input");
+
+const scoreText =
+document.getElementById("score");
+
+const comboText =
+document.getElementById("combo");
+
+const character =
+document.getElementById("character");
 
 function setQuestion(){
 
@@ -94,9 +125,60 @@ Math.floor(Math.random()*questions.length)
 ];
 
 text.textContent =
-currentQuestion.jp + " (" + currentQuestion.roma + ")";
+currentQuestion.jp;
+
+roma.textContent =
+currentQuestion.roma;
 
 input.value = "";
+
+}
+
+function updateCharacter(){
+
+if(score < 100){
+
+character.src = "lv1_idle.png";
+
+}
+else if(score < 300){
+
+character.src = "lv2_idle.png";
+
+}
+else if(score < 600){
+
+character.src = "lv3_idle.png";
+
+}
+else if(score < 1000){
+
+character.src = "lv4_idle.png";
+
+}
+else{
+
+character.src = "lv5_idle.png";
+
+}
+
+}
+
+function playLift(){
+
+character.src = "lift_up.png";
+
+setTimeout(()=>{
+
+character.src = "lift_down.png";
+
+},300);
+
+setTimeout(()=>{
+
+updateCharacter();
+
+},600);
 
 }
 
@@ -106,17 +188,19 @@ const value = input.value;
 
 if(currentQuestion.roma.startsWith(value)){
 
-combo++;
-
-comboText.textContent =
-"COMBO x" + combo;
-
 if(value === currentQuestion.roma){
+
+combo++;
 
 score += 50;
 
+playLift();
+
 scoreText.textContent =
 "SCORE:" + score;
+
+comboText.textContent =
+"COMBO x" + combo;
 
 setQuestion();
 
@@ -140,4 +224,3 @@ setQuestion();
 
 </body>
 </html>
-```
