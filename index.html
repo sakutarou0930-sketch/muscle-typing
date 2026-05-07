@@ -184,16 +184,22 @@ body {
   <div id="missText">MISS: 0</div> 
 </div>
 
+<br>
+<img id="retryButton" src="retry.png" alt="もう一度挑戦する">
+
 <h2>🏆 ランキング</h2>
 <ol id="ranking"></ol>
-
-<img id="retryButton" src="retry.png" alt="もう一度挑戦する">
 
 <!-- 音声ファイル群 -->
 <audio id="bgm" loop></audio> 
 <audio id="startSound" src="Ohoo.mp3"></audio> 
 <audio id="okSound" src="ok.mp3"></audio>      
 <audio id="missSound" src="NG.mp3"></audio>    
+
+<div id="footer" style="margin-top: 40px; margin-bottom: 20px; font-size: 14px; color: #888; text-align: center;">
+  <div>20260507nanami</div>
+  <div>改修：20260507</div>
+</div>
 
 <script>
 const FATIGUE_LV1 = 30; 
@@ -666,8 +672,9 @@ function endGame() {
 
 function saveRanking() {
   const name = nameInput.value || "名無し";
+  const dateStr = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
   let data = JSON.parse(localStorage.getItem("ranking") || "[]");
-  data.push({name, score});
+  data.push({name, score, date: dateStr});
   data.sort((a,b)=>b.score-a.score);
   data = data.slice(0,5);
   localStorage.setItem("ranking", JSON.stringify(data));
@@ -678,7 +685,8 @@ function showRanking() {
   let data = JSON.parse(localStorage.getItem("ranking") || "[]");
   data.forEach(d => {
     const li = document.createElement("li");
-    li.textContent = d.name + " - " + d.score;
+    const dateText = d.date ? ` (${d.date})` : "";
+    li.textContent = `${d.name} - ${d.score}${dateText}`;
     rankingEl.appendChild(li);
   });
 }
