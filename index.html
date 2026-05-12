@@ -459,6 +459,7 @@ let currentJp = "";
 let typedEn = "";   
 let untypedEnList = []; 
 let availableTexts = [];
+let ignoreNextN = false;
 let score = 0;
 let combo = 0;
 let fatigue = 0;
@@ -805,14 +806,27 @@ document.addEventListener("keydown", (e) => {
 
     // どれか一つでも空文字（最後まで打った）になればクリア
     if (untypedEnList.some(romaji => romaji.length === 0)) {
+      if (key === 'n') {
+        ignoreNextN = true;
+      } else {
+        ignoreNextN = false;
+      }
       score += 50;
       fatigue = Math.max(0, fatigue - 5);
       okSound.currentTime = 0;
       okSound.play().catch(e => {}); 
       newText();
+    } else {
+      ignoreNextN = false;
     }
   } 
   else {
+    // 前回が「n」で終わる正解で、直後に「n」を誤爆した場合は1回だけ無視する
+    if (ignoreNextN && key === 'n') {
+      ignoreNextN = false;
+      return; 
+    }
+    ignoreNextN = false;
     combo = 0;
     fatigue = Math.min(100, fatigue + 15);
     missCount++; 
