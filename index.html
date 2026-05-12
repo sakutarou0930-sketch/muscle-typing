@@ -293,8 +293,9 @@ function generateRomaji(kanaStr) {
         if (!/[aeiouyn]/.test(firstChar)) {
           res.push('n' + t);
         }
+      } else {
+        res.push('n' + t);
       }
-      // t.length === 0 (語尾) の時は 'n' 単独を許容せず 'nn' だけにする
     }
     return [...new Set(res)];
   }
