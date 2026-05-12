@@ -157,6 +157,10 @@ body {
 
 <img id="gameLogo" src="Logo.png" alt="ev-Gym evType パーソナルジムのタイピングゲーム">
 
+<div id="nameWarning" style="color: #ff4444; font-size: 16px; font-weight: bold; margin-bottom: 10px; display: none;">
+  ⚠️ フルネームで入力してください。<br>（※後から名前の変更はできません）
+</div>
+
 <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 5px;">
   <input id="nameInput" placeholder="名前を入力" style="margin-top: 0; padding: 10px; font-size: 18px; border-radius: 5px; border: 2px solid #ccc;">
   <img id="startButton" src="Start.png" alt="ゲームスタート！" width="250" style="margin-bottom: 0;">
@@ -825,10 +829,18 @@ document.addEventListener("keydown", (e) => {
 showRanking();
 // 最終更新日時の自動表示 (GitHub APIを使用)
 document.addEventListener("DOMContentLoaded", async () => {
-  // 保存された名前があれば自動入力する
+  // 保存された名前があれば自動入力してロックし、なければ警告を表示する
   const savedName = localStorage.getItem("savedPlayerName");
+  const nameInput = document.getElementById("nameInput");
+  const nameWarning = document.getElementById("nameWarning");
+  
   if (savedName) {
-    document.getElementById("nameInput").value = savedName;
+    nameInput.value = savedName;
+    nameInput.readOnly = true; // 変更不可にする
+    nameInput.style.backgroundColor = "#555"; // ロックされていることを視覚的に示す
+    nameInput.style.color = "#ccc";
+  } else {
+    nameWarning.style.display = "block"; // 初回のみ注意書きを表示
   }
 
   const displayEl = document.getElementById("lastModifiedDisplay");
