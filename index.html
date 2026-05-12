@@ -23,19 +23,19 @@ body {
 }
 
 #text-furigana {
-  font-size:16px;
+  font-size:24px;
   color: #aaa;
   margin-bottom: -5px;
 }
 
 #text-jp {
-  font-size:24px;
+  font-size:40px;
   font-weight: bold;
 }
 
 #text-en {
-  font-size:26px; 
-  color: #555;    
+  font-size:32px; 
+  color: #888;    
   margin-top: 5px;
   letter-spacing: 2px;
 }
@@ -167,17 +167,17 @@ body {
   <img id="startButton" src="Start.png" alt="ゲームスタート！" width="250" style="margin-bottom: 0;">
 </div>
 
+<div id="text-container">
+  <div id="text-furigana"></div>
+  <div id="text-jp">ゲームをスタートしてください</div>
+  <div id="text-en"></div>
+</div>
+
 <img id="character" src="lv1_idle.png" alt="筋トレキャラ">
 
 <div id="imeWarning">
   ⚠️ 日本語入力（IME）がオンになっています！<br>
   キーボードの「半角/全角」キーを押して、直接入力（英数モード）にしてからタイピングしてください。
-</div>
-
-<div id="text-container">
-  <div id="text-furigana"></div>
-  <div id="text-jp">ゲームをスタートしてください</div>
-  <div id="text-en"></div>
 </div>
 
 <div>
@@ -205,6 +205,9 @@ body {
 </div>
 
 <script>
+// ↓★★★ここにGASのWebアプリURLを貼り付けます★★★↓
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwPsqEeL4T6HW7tGHE9gKzVXpyNbhQBde0Y8pVOOomR1uUiB_qJ3s_fxB-0a1azKo-E/exec";
+
 const FATIGUE_LV1 = 30; 
 const FATIGUE_LV2 = 60; 
 const FATIGUE_LV3 = 90; 
@@ -642,6 +645,7 @@ function startGame() {
   
   startButton.style.display = "none";
   retryButton.style.display = "none"; 
+  document.getElementById("gameLogo").style.display = "none";
   nameInput.disabled = true; 
   document.getElementById("imeWarning").style.display = "none";
 
@@ -666,36 +670,75 @@ function endGame() {
   // ゲーム終了時のBGMストップをなくし、そのままBGMが流れ続けるようにしました
   
   retryButton.style.display = "block";
+  document.getElementById("gameLogo").style.display = "block";
   nameInput.disabled = false;
   
   textJpEl.textContent = "終了！";
   textEnEl.innerHTML = "";
 
-  saveRanking();
-  showRanking();
+  // スコア保存とランキング取得を非同期で実行
+  (async () => {
+    await saveRanking();
+    await showRanking();
+  })();
   
-  setTimeout(() => alert("終了！\nスコア: " + score + "\nミス回数: " + missCount + "回"), 10);
+  setTimeout(() => alert("終了！\nスコア: " + score + "\nミス回数: " + missCount + "回"), 100);
 }
 
-function saveRanking() {
+async function saveRanking() {
   const name = nameInput.value || "名無し";
   const dateStr = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  
+  // ローカルにも一応保存
   let data = JSON.parse(localStorage.getItem("ranking") || "[]");
   data.push({name, score, date: dateStr});
   data.sort((a,b)=>b.score-a.score);
   data = data.slice(0,5);
   localStorage.setItem("ranking", JSON.stringify(data));
+
+  // GASへスコアを送信
+  if (GAS_URL !== "YOUR_GAS_WEB_APP_URL_HERE") {
+    try {
+      await fetch(GAS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `name=${encodeURIComponent(name)}&score=${score}&date=${encodeURIComponent(dateStr)}`
+      });
+    } catch (e) {
+      console.error("スコア送信エラー:", e);
+    }
+  }
 }
 
-function showRanking() {
-  rankingEl.innerHTML = "";
-  let data = JSON.parse(localStorage.getItem("ranking") || "[]");
-  data.forEach(d => {
-    const li = document.createElement("li");
-    const dateText = d.date ? ` (${d.date})` : "";
-    li.textContent = `${d.name} - ${d.score}${dateText}`;
-    rankingEl.appendChild(li);
-  });
+async function showRanking() {
+  rankingEl.innerHTML = "<li>読み込み中...</li>";
+  
+  if (GAS_URL === "YOUR_GAS_WEB_APP_URL_HERE") {
+    rankingEl.innerHTML = "";
+    let data = JSON.parse(localStorage.getItem("ranking") || "[]");
+    data.forEach(d => {
+      const li = document.createElement("li");
+      const dateText = d.date ? ` (${d.date})` : "";
+      li.textContent = `${d.name} - ${d.score}${dateText}`;
+      rankingEl.appendChild(li);
+    });
+    return;
+  }
+
+  try {
+    const res = await fetch(GAS_URL);
+    const data = await res.json();
+    rankingEl.innerHTML = "";
+    data.slice(0, 10).forEach(d => {
+      const li = document.createElement("li");
+      const dateText = d.date ? ` (${d.date})` : "";
+      li.textContent = `${d.name} - ${d.score}${dateText}`;
+      rankingEl.appendChild(li);
+    });
+  } catch (e) {
+    console.error("ランキング取得エラー:", e);
+    rankingEl.innerHTML = "<li>ランキングの取得に失敗しました</li>";
+  }
 }
 
 function updateDisplay() {
