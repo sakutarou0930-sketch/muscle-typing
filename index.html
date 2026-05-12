@@ -201,7 +201,7 @@ body {
 
 <div id="footer" style="margin-top: 40px; margin-bottom: 20px; font-size: 14px; color: #888; text-align: center;">
   <div>20260507nanami</div>
-  <div>改修：20260511</div>
+  <div id="lastModifiedDisplay">改修：...</div>
 </div>
 
 <script>
@@ -808,7 +808,18 @@ document.addEventListener("keydown", (e) => {
 });
 
 showRanking();
+// 最終更新日時の自動表示
+document.addEventListener("DOMContentLoaded", () => {
+  const d = new Date(document.lastModified);
+  if (!isNaN(d.getTime())) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    document.getElementById("lastModifiedDisplay").textContent = `最終更新：${yyyy}/${mm}/${dd} ${hh}:${min}`;
+  }
+});
 </script>
-
 </body>
 </html>
