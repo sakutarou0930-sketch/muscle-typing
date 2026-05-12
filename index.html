@@ -456,6 +456,7 @@ let currentFurigana = "";
 let currentJp = "";
 let typedEn = "";   
 let untypedEnList = []; 
+let availableTexts = [];
 let score = 0;
 let combo = 0;
 let fatigue = 0;
@@ -531,7 +532,13 @@ bgmToggleBtn.addEventListener("click", () => {
 // =====================================
 
 function newText() {
-  const rnd = texts[Math.floor(Math.random() * texts.length)];
+  if (availableTexts.length === 0) {
+    availableTexts = [...texts];
+  }
+  const index = Math.floor(Math.random() * availableTexts.length);
+  const rnd = availableTexts[index];
+  availableTexts.splice(index, 1);
+
   currentFurigana = rnd.kana;
   currentJp = rnd.jp;
   untypedEnList = generateRomaji(rnd.kana);
@@ -737,7 +744,11 @@ async function showRanking() {
     });
   } catch (e) {
     console.error("ランキング取得エラー:", e);
-    rankingEl.innerHTML = "<li>ランキングの取得に失敗しました</li>";
+    let errMsg = e.message;
+    if (errMsg === "Failed to fetch") {
+      errMsg += " (Google側のアクセス権限が「全員」になっていない可能性があります)";
+    }
+    rankingEl.innerHTML = `<li>ランキングの取得に失敗しました<br><span style="font-size:12px;color:#ffaa00;">エラー原因: ${errMsg}</span></li>`;
   }
 }
 
