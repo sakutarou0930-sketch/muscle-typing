@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>総合ランキング - 筋トレタイピング</title>
+<style>
+body {
+  background:#111;
+  color:#fff;
+  text-align:center;
+  font-family:sans-serif;
+  margin: 0;
+  padding: 20px;
+}
+#gameLogo {
+  margin: 10px auto 20px;
+  display: block;
+  image-rendering: pixelated;
+  width: 500px;
+  max-width: 90%;
+}
+h2 {
+  font-size: 32px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #555;
+  display: inline-block;
+  padding-bottom: 10px;
+}
+.ranking-table {
+  margin: 0 auto;
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 600px;
+  font-size: 20px;
+  background: #222;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.ranking-table th, .ranking-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #444;
+}
+.ranking-table th {
+  background: #333;
+  color: #fff;
+  font-weight: bold;
+}
+.ranking-table tr:last-child td {
+  border-bottom: none;
+}
+.ranking-table tr:hover {
+  background: #2a2a2a;
+}
+.rank-1 { font-weight: bold; color: #ffd700; font-size: 24px; }
+.rank-2 { font-weight: bold; color: #c0c0c0; font-size: 22px; }
+.rank-3 { font-weight: bold; color: #cd7f32; font-size: 20px; }
+.score { font-weight: bold; color: #0f0; }
+
+.back-btn {
+  display: inline-block;
+  margin-top: 30px;
+  padding: 10px 20px;
+  background: #555;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 5px;
+  transition: 0.2s;
+}
+.back-btn:hover {
+  background: #777;
+}
+#loading {
+  font-size: 20px;
+  color: #aaa;
+  margin-top: 50px;
+}
+</style>
+</head>
+<body>
+
+<a href="index.html">
+  <img id="gameLogo" src="Logo.png" alt="ev-Gym evType パーソナルジムのタイピングゲーム">
+</a>
+
+<h2>🏆 総合ランキング (自己ベスト)</h2>
+
+<div id="loading">ランキングデータを読み込み中...</div>
+
+<table class="ranking-table" id="rankingTable" style="display: none;">
+  <thead>
+    <tr>
+      <th style="width: 60px;">順位</th>
+      <th>プレイヤー名</th>
+      <th style="width: 100px;">スコア</th>
+    </tr>
+  </thead>
+  <tbody id="rankingBody">
+  </tbody>
+</table>
+
+<a href="index.html" class="back-btn">← ゲームに戻る</a>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwPsqEeL4T6HW7tGHE9gKzVXpyNbhQBde0Y8pVOOomR1uUiB_qJ3s_fxB-0a1azKo-E/exec";
+
+function renderRanking(data) {
+  const loadingEl = document.getElementById("loading");
+  const tableEl = document.getElementById("rankingTable");
+  const tbodyEl = document.getElementById("rankingBody");
+
+  // 名寄せ（自己ベストのみ抽出）
+  const bestScores = {};
+  data.forEach(row => {
+    const name = row.name || "名無し";
+    const score = Number(row.score) || 0;
+    if (!bestScores[name] || score > bestScores[name].score) {
+      bestScores[name] = { name: name, score: score, date: row.date };
+    }
+  });
+
+  // 配列に戻してスコア降順でソート
+  const sortedData = Object.values(bestScores).sort((a, b) => b.score - a.score);
+
+  loadingEl.style.display = "none";
+  tableEl.style.display = "table";
+  tbodyEl.innerHTML = "";
+
+  if (sortedData.length === 0) {
+    tbodyEl.innerHTML = `<tr><td colspan="3" style="text-align:center;">まだ記録がありません</td></tr>`;
+    return;
+  }
+
+  sortedData.forEach((d, index) => {
+    const tr = document.createElement("tr");
+    
+    const rank = index + 1;
+    let rankClass = "";
+    let rankText = rank + "位";
+    if (rank === 1) { rankClass = "rank-1"; rankText = "👑 1位"; }
+    else if (rank === 2) { rankClass = "rank-2"; rankText = "🥈 2位"; }
+    else if (rank === 3) { rankClass = "rank-3"; rankText = "🥉 3位"; }
+
+    tr.innerHTML = `
+      <td class="${rankClass}" style="text-align: center;">${rankText}</td>
+      <td>${d.name}</td>
+      <td class="score" style="text-align: right;">${d.score}</td>
+    `;
+    tbodyEl.appendChild(tr);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const res = await fetch(GAS_URL);
+    const data = await res.json();
+    renderRanking(data);
+  } catch (e) {
+    console.error("GASからのランキング取得エラー:", e);
+    // エラー時はローカルストレージのデータでフォールバック表示
+    const localData = JSON.parse(localStorage.getItem("ranking") || "[]");
+    if (localData.length > 0) {
+      renderRanking(localData);
+      document.getElementById("loading").innerHTML = `<span style="color:#ffaa00; font-size: 14px; display:block; margin-bottom:15px;">※サーバーとの通信に失敗したため、お使いのパソコンの履歴のみを表示しています。</span>`;
+      document.getElementById("loading").style.display = "block";
+    } else {
+      document.getElementById("loading").innerHTML = `<span style="color:#ffaa00;">ランキングの取得に失敗しました。<br>エラー: ${e.message}</span>`;
+    }
+  }
+});
+</script>
+
+</body>
+</html>
