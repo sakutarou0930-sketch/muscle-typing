@@ -192,7 +192,7 @@ body {
 
 <img id="retryButton" src="retry.png" alt="もう一度挑戦する">
 
-<a href="ranking.html" target="_blank">
+<a id="rankingBtnLink" href="ranking.html" target="_blank">
   <img src="Rankings.png" alt="ランキング" style="max-width: 300px; margin-top: 15px; cursor: pointer;">
 </a>
 
@@ -499,8 +499,14 @@ const idleCharacters = [
 // =====================================
 // BGMをどこかでクリック/キー入力した瞬間に鳴らす処理
 // =====================================
-function startBackgroundMusic() {
+function startBackgroundMusic(e) {
   if (isBgmPlaying) return; // すでに鳴っていれば何もしない
+
+  // ランキングボタンがクリックされた場合はBGMをスタートさせない
+  if (e && e.target) {
+    const targetLink = e.target.closest('#rankingBtnLink');
+    if (targetLink) return;
+  }
 
   const randomBGM = bgmList[Math.floor(Math.random() * bgmList.length)];
   bgmAudio.src = randomBGM;
