@@ -13,7 +13,7 @@ body {
 }
 
 #character {
-  width:256px;
+  width:180px;
   image-rendering: pixelated;
   transition: all 0.2s;
 }
@@ -29,12 +29,12 @@ body {
 }
 
 #text-jp {
-  font-size:40px;
+  font-size:32px;
   font-weight: bold;
 }
 
 #text-en {
-  font-size:32px; 
+  font-size:26px; 
   color: #888;    
   margin-top: 5px;
   letter-spacing: 2px;
@@ -83,10 +83,10 @@ body {
 }
 
 #gameLogo {
-  margin: 10px auto 0;
+  margin: 0 auto;
   display: block;
   image-rendering: pixelated; /* ドット絵のロゴなのでくっきり表示 */
-  width: 500px;
+  width: 400px;
   max-width: 90%;
 }
 
@@ -155,56 +155,93 @@ body {
 
 <body>
 
-<img id="gameLogo" src="Logo.png" alt="ev-Gym evType パーソナルジムのタイピングゲーム">
+<div style="display: flex; justify-content: center; align-items: flex-start; max-width: 1100px; margin: 0 auto; gap: 60px; padding: 10px 20px;">
 
-<div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 5px;">
-  <input id="nameInput" placeholder="名前を入力" style="margin-top: 0; padding: 10px; font-size: 18px; border-radius: 5px; border: 2px solid #ccc;">
-  <img id="startButton" src="Start.png" alt="ゲームスタート！" width="250" style="margin-bottom: 0;">
-  <button id="bgmToggleBtn">🔊 音声 ON</button>
-</div>
+  <!-- 左側：ゲーム画面 -->
+  <div style="flex: 1; max-width: 500px; text-align: center;">
+    <img id="gameLogo" src="Logo.png" alt="ev-Gym evType パーソナルジムのタイピングゲーム">
+    
+    <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 5px;">
+      <input id="nameInput" placeholder="名前を入力" style="margin-top: 0; padding: 10px; font-size: 18px; border-radius: 5px; border: 2px solid #ccc;">
+      <img id="startButton" src="Start.png" alt="ゲームスタート！" width="200" style="margin-bottom: 0;">
+      <button id="bgmToggleBtn">🔊 音声 ON</button>
+    </div>
+    
+    <div id="nameWarning" style="color: #ff4444; font-size: 14px; font-weight: bold; margin-bottom: 15px; max-width: 600px; margin-left: auto; margin-right: auto; text-align: center;">
+      フルネームで入力。<br>
+      入力した名前で保存されるため、これ以降名前の変更はできません。<br>
+      名前の入力ミスをした場合は名波まで連絡ください。
+    </div>
+    
+    <div id="text-container">
+      <div id="text-furigana"></div>
+      <div id="text-jp">ゲームをスタートしてください</div>
+      <div id="text-en"></div>
+    </div>
+    
+    <img id="character" src="lv1_idle.png" alt="筋トレキャラ">
+    
+    <div id="imeWarning">
+      ⚠️ 日本語入力（IME）がオンになっています！<br>
+      キーボードの「半角/全角」キーを押して、直接入力（英数モード）にしてからタイピングしてください。
+    </div>
+    
+    <div>
+      <div id="timer">TIME: 60</div>
+      <div id="combo" class="combo">COMBO x0</div>
+      <div id="score">SCORE: 0</div>
+      <div id="fatigueText">疲労度: 0%</div>
+      <div id="missText">MISS: 0</div> 
+    </div>
+    
+    <img id="retryButton" src="retry.png" alt="もう一度挑戦する">
+    
+    <a id="rankingBtnLink" href="ranking.html" target="_blank">
+      <img src="Rankings.png" alt="ランキング" style="max-width: 300px; margin-top: 15px; cursor: pointer;">
+    </a>
+    
+    <!-- 音声ファイル群 -->
+    <audio id="bgm" loop></audio> 
+    <audio id="startSound" src="Ohoo.mp3"></audio> 
+    <audio id="okSound" src="ok.mp3"></audio>      
+    <audio id="missSound" src="NG.mp3"></audio>    
+    
+    <div id="footer" style="margin-top: 40px; margin-bottom: 20px; font-size: 14px; color: #888; text-align: center;">
+      <div>20260507nanami</div>
+      <div id="lastModifiedDisplay">改修：...</div>
+    </div>
+  </div>
 
-<div id="nameWarning" style="color: #ff4444; font-size: 14px; font-weight: bold; margin-bottom: 15px; max-width: 600px; margin-left: auto; margin-right: auto; text-align: center;">
-  フルネームで入力。<br>
-  入力した名前で保存されるため、これ以降名前の変更はできません。<br>
-  名前の入力ミスをした場合は名波まで連絡ください。
-</div>
+  <!-- 右側：説明文（マニュアル） -->
+  <div style="flex: 1; max-width: 450px; text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; border: 1px solid #333; line-height: 1.4;">
+    <h2 style="border-bottom: 2px solid #555; padding-bottom: 5px; margin-top: 0; margin-bottom: 10px; font-size: 20px;">【eviType 遊び方】</h2>
 
-<div id="text-container">
-  <div id="text-furigana"></div>
-  <div id="text-jp">ゲームをスタートしてください</div>
-  <div id="text-en"></div>
-</div>
+    <h3 style="color: #0f0; margin-top: 10px; margin-bottom: 5px; font-size: 16px;">■ 背景と目的</h3>
+    <p style="font-size: 13px; margin-top: 0; margin-bottom: 10px;">お客様の情報を正しく記録するためには「カルテ」が必要不可欠です。<br>
+    そのカルテを短時間かつ正確に書くためには、最低限のタイピング能力が求められます。<br>
+    本ゲームは、スタッフの皆様が楽しみながら実務に必要なタイピング能力を向上させることを目的として作成されました！</p>
 
-<img id="character" src="lv1_idle.png" alt="筋トレキャラ">
+    <h3 style="color: #0f0; margin-top: 10px; margin-bottom: 5px; font-size: 16px;">■ 概要と目標</h3>
+    <p style="font-size: 13px; margin-top: 0; margin-bottom: 10px;">フィットネス用語や筋肉の部位を制限時間内にどれだけ打ち込めるかに挑戦するゲームです。<br>
+    プレイ終了後、ランキングにプレイヤーの得点が記録されます。<br>
+    まずは<strong style="color: yellow;">【自身の最高得点が1000点を超えるまで】</strong>を目標に、繰り返し練習していきましょう！</p>
 
-<div id="imeWarning">
-  ⚠️ 日本語入力（IME）がオンになっています！<br>
-  キーボードの「半角/全角」キーを押して、直接入力（英数モード）にしてからタイピングしてください。
-</div>
+    <hr style="border-color: #444; margin: 10px 0;">
 
-<div>
-  <div id="timer">TIME: 60</div>
-  <div id="combo" class="combo">COMBO x0</div>
-  <div id="score">SCORE: 0</div>
-  <div id="fatigueText">疲労度: 0%</div>
-  <div id="missText">MISS: 0</div> 
-</div>
+    <h3 style="color: #0f0; margin-bottom: 5px; font-size: 16px;">■ プレイの手順</h3>
+    <ol style="font-size: 13px; padding-left: 20px; margin-top: 0; margin-bottom: 10px;">
+      <li style="margin-bottom: 5px;"><strong>名前の入力</strong><br>画面中央の入力欄に「名前」を入力し、「Start」ボタンをクリックします。</li>
+      <li style="margin-bottom: 5px;"><strong>キーボード設定の確認（⚠️重要）</strong><br>このゲームはローマ字入力です。必ずキーボードの「半角/全角」キーを押し、日本語入力（IME）をオフにしてください。<br><span style="color: #ff4444; font-size: 0.9em;">※オンだと警告が出ます</span></li>
+      <li style="margin-bottom: 5px;"><strong>タイピング（制限時間：60秒）</strong><br>お題のローマ字を打ち込みます。<br>「し（shi/si）」など複数パターンに対応。</li>
+    </ol>
 
-<img id="retryButton" src="retry.png" alt="もう一度挑戦する">
+    <h3 style="color: #0f0; margin-top: 10px; margin-bottom: 5px; font-size: 16px;">■ 面白ポイント！</h3>
+    <ul style="font-size: 13px; padding-left: 20px; margin-top: 0; margin-bottom: 5px;">
+      <li style="margin-bottom: 5px;"><strong>💪 コンボシステム</strong><br>連続入力でコンボが繋がり、キャラクターがスピードアップ！</li>
+      <li style="margin-bottom: 5px;"><strong>💦 疲労度システム</strong><br>ミスすると「疲労度」が溜まりバテてしまいます。正確な入力で回復！</li>
+    </ul>
+  </div>
 
-<a id="rankingBtnLink" href="ranking.html" target="_blank">
-  <img src="Rankings.png" alt="ランキング" style="max-width: 300px; margin-top: 15px; cursor: pointer;">
-</a>
-
-<!-- 音声ファイル群 -->
-<audio id="bgm" loop></audio> 
-<audio id="startSound" src="Ohoo.mp3"></audio> 
-<audio id="okSound" src="ok.mp3"></audio>      
-<audio id="missSound" src="NG.mp3"></audio>    
-
-<div id="footer" style="margin-top: 40px; margin-bottom: 20px; font-size: 14px; color: #888; text-align: center;">
-  <div>20260507nanami</div>
-  <div id="lastModifiedDisplay">改修：...</div>
 </div>
 
 <script>
