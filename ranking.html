@@ -92,7 +92,7 @@ h2 {
 <table class="ranking-table" id="rankingTable" style="display: none;">
   <thead>
     <tr>
-      <th style="width: 60px;">順位</th>
+      <th style="width: 100px; white-space: nowrap;">順位</th>
       <th>プレイヤー名</th>
       <th style="width: 100px;">スコア</th>
     </tr>
@@ -144,7 +144,7 @@ function renderRanking(data) {
     else if (rank === 3) { rankClass = "rank-3"; rankText = "🥉 3位"; }
 
     tr.innerHTML = `
-      <td class="${rankClass}" style="text-align: center;">${rankText}</td>
+      <td class="${rankClass}" style="text-align: center; white-space: nowrap;">${rankText}</td>
       <td>${d.name}</td>
       <td class="score" style="text-align: right;">${d.score}</td>
     `;
