@@ -863,6 +863,15 @@ document.addEventListener("keydown", (e) => {
 
 // 最終更新日時の自動表示 (GitHub APIを使用)
 document.addEventListener("DOMContentLoaded", async () => {
+  // URLのパラメータに ?reset=true がある場合は名前をリセット
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('reset') === 'true') {
+    localStorage.removeItem('savedPlayerName');
+    // URLからパラメータを消去
+    window.history.replaceState({}, document.title, window.location.pathname);
+    alert('名前データをリセットしました！\n新しいお名前を入力してください。');
+  }
+
   // 保存された名前があれば自動入力する
   const savedName = localStorage.getItem("savedPlayerName");
   if (savedName) {
